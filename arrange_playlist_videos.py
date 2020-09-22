@@ -1,13 +1,17 @@
 from googleapiclient.discovery import build
 import os
+from math import ceil
+
+from progress_bar2 import ProgressBar
 
 api_key = os.environ.get('YOUTUBE_DATA_API_KEY')
 
 yt = build('youtube', 'v3', developerKey=api_key)
 
 
-def playlists_of_channel(yt_build):
+def playlists_of_channel(yt_build, channel_id):
     """
+    :param channel_id: youtube channel ID
     :param yt_build: googleapiclient.discovery.build object
     :return: dict{serial_no: playlist_id}
     """
@@ -15,6 +19,8 @@ def playlists_of_channel(yt_build):
     # List containing playlist responses by pages
     pl_response_list = []
     nextPageToken = None
+    page = 1
+    bar = ProgressBar()
     while True:
         pl_request = yt_build.playlists().list(
             part='snippet',
@@ -22,15 +28,16 @@ def playlists_of_channel(yt_build):
             pageToken=nextPageToken
         )
         pl_response = pl_request.execute()
-
         pl_response_list.append(pl_response)
 
+        if page == 1:
+            bar.total = ceil(pl_response['pageInfo']['totalResults'] / pl_response['pageInfo']['resultsPerPage'])
+        bar.update(page)
+        page += 1
         nextPageToken = pl_response.get('nextPageToken')
         if not nextPageToken:
             print()
             break
-
-        print('.', end='')
 
     # Dictionary of playlist IDs
     pl_dict = {}
@@ -54,6 +61,8 @@ def items_of_playlist(yt_build, playlistId):
     # List containing playlist item responses of selected playlist by pages
     pl_item_response_list = []
     nextPageToken = None
+    page = 1
+    bar = ProgressBar()
     while True:
         pl_item_request = yt_build.playlistItems().list(
             part='snippet',
@@ -61,15 +70,18 @@ def items_of_playlist(yt_build, playlistId):
             pageToken=nextPageToken
         )
         pl_item_response = pl_item_request.execute()
-
         pl_item_response_list.append(pl_item_response)
+
+        if page == 1:
+            bar.total = ceil(
+                pl_item_response['pageInfo']['totalResults'] / pl_item_response['pageInfo']['resultsPerPage'])
+        bar.update(page)
+        page += 1
 
         nextPageToken = pl_item_response.get('nextPageToken')
         if not nextPageToken:
             print()
             break
-
-        print('.', end='')
 
     # Dictionary of playlist item IDs
     serial_dict = {}
@@ -159,7 +171,7 @@ if __name__ == '__main__':
     avoid.append("ravd.txt")
     avoid.append(os.path.basename(__file__))
 
-    playlists = playlists_of_channel(yt)
+    playlists = playlists_of_channel(yt, channel_id)
     # select the playlist
     select = int(input('Select from the above playlists: '))
     video_dict = items_of_playlist(yt, playlists[select])
