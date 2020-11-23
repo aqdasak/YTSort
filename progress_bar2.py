@@ -20,7 +20,8 @@ class ProgressBar:
         self.current = current
         from math import ceil
         ch = ceil(25 / self.total)
-        print('\b' * (4 + ch * self.total + 2), end='')
+        # print('\b' * (4 + ch * self.total + 2), end='')
         print(str(self.current * 100 // self.total) + '% ', end='')
         progress_str = '[' + '#' * ch * self.current + ' ' * ch * (self.total - self.current) + ']'
-        print(progress_str, end='')
+        # print(progress_str, end='')
+        print(progress_str)
