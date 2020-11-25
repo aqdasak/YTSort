@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 
@@ -36,7 +37,7 @@ class RenamingHelper:
         """
 
         for local_file in self.local_files:
-            if local_file not in self.files_to_be_avoided:
+            if local_file not in self.files_to_be_avoided and not os.path.isdir(local_file):
                 length_difference = 1000
                 temp_remote = None
                 for remote_file in self.serial_dict:
