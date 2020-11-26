@@ -46,7 +46,9 @@ class RenamingHelper:
                             length_difference = len(local_file) - len(remote_file)
                             temp_remote = remote_file
 
-                if not local_file.startswith(str(self.serial_dict[temp_remote])):
+                if temp_remote is None:
+                    print('SKIPPED:', local_file)
+                elif not local_file.startswith(str(self.serial_dict[temp_remote])):
                     self._update_rename_dict(local_file, self.serial_dict[temp_remote])
 
     def get_rename_dict(self) -> dict:

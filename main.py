@@ -30,40 +30,6 @@ def dry_run(old_new: dict):
         print()
 
 
-# def get_channel_id(yt_build,path):
-#     channel_with_id = {}
-#     last_index = 0
-#     try:
-#         os.chdir(os.path.join(os.path.dirname(__file__),'/cache'))
-#         with open('channel.json') as f:
-#             channel_with_id = json.load(f)
-#     except:
-#         pass
-#     else:
-#         for i, channel in channel_with_id.items():
-#             print(i, '-', channel['title'])
-#             last_index = i
-#         print('Select from above or enter channel name to search')
-#
-#     search = input()
-#     if search.isdigit():
-#         channel_id = channel_with_id[search]['channel_id']
-#     else:
-#         channel = yt_search(yt_build, search)
-#         select = input('Select:')
-#         channel_id = channel[select]['channel_id']
-#         channel_with_id.update(
-#             {last_index + 1: {'title': channel[select]['title'], 'channel_id': channel[select]['channel_id']}})
-#         with open('channel.json', 'w') as f:
-#             json.dump(channel_with_id, f, indent=4)
-#
-#     os.chdir(path)
-#     with open('channel_id.txt', 'w') as f:
-#         f.write(channel_id)
-#
-#     return channel_id
-
-
 def main():
     api_key = os.environ.get('YOUTUBE_DATA_API_KEY')
     yt_build = build('youtube', 'v3', developerKey=api_key)
@@ -82,21 +48,12 @@ def main():
     renaming_folder_path = os.getcwd()
     program_folder_path = os.path.dirname(__file__)
 
-    # try:
-    #     with open("channel_id.txt") as f:
-    #         channel_id = f.read().split("\n")[0]
-    #         print("Channel ID taken from file 'channel_id.txt' =", channel_id)
-    # except:
-    #     # print("Save channel ID in file 'channel_id.txt' in same folder or input below.")
-    #     # channel_id = input('Enter channel ID: ')
-    #     channel_id=get_channel_id(yt,renaming_folder_path)
-
     avoid = [avoid_file, 'channel_id.txt', os.path.basename(__file__)]
     try:
         with open(avoid_file) as f:
             avoid.append(f.read().split("\n"))
     except:
-        print("No file ignored")
+        print("No file ignored\n")
 
     channel_id = get_channel_id(yt_build, program_folder_path, renaming_folder_path)
 
@@ -105,6 +62,7 @@ def main():
     select = int(input('Select from the above playlists: '))
     remote_serial_dict = items_of_playlist(yt_build, playlists[select])
 
+    print()
     renaming_helper = RenamingHelper(remote_serial_dict, files, avoid)
     rename_dict = renaming_helper.get_rename_dict()
 
