@@ -1,43 +1,23 @@
 from googleapiclient.discovery import build
 import os
 
+from config import config
 from rename_dict import RenamingHelper
-from youtube_playlist import playlists_of_channel, items_of_playlist
+# from youtube_playlist import playlists_of_channel, items_of_playlist
 
 from channel_id import get_channel_id
+# from rename_dict import batch_rename, dry_run
 
-
-def batch_rename(old_new: dict):
-    """
-    Rename the files according to the rename_dict
-    :param old_new: dict{old_filename: new_filename}
-    :return: void
-    """
-    for old, new in old_new.items():
-        try:
-            os.rename(old, new)
-        except Exception as e:
-            print(e)
-        else:
-            print(f"{old} renamed")
-
-
-def dry_run(old_new: dict):
-    print('\nDRY RUN\n')
-    for old, new in old_new.items():
-        print(f'OLD\t: {old}')
-        print(F'NEW\t: {new}')
-        print()
+from youtube_channel import YTChannel
 
 
 def main():
-    api_key = os.environ.get('YOUTUBE_DATA_API_KEY')
-    yt_build = build('youtube', 'v3', developerKey=api_key)
+    exceptions_file = config['exceptions']
 
-    avoid_file = 'avoid.txt'
+    yt_build = build('youtube', 'v3', developerKey=config['api_key'])
 
     print(
-        f"# If you want to ignore some files, add name of those files in {avoid_file} in the same folder in which "
+        f"# If you want to ignore some files, add name of those files in {exceptions_file} in the same folder in which "
         f"files to be renamed are present (or move them in another folder).\n")
     print("Input the path of the folder that contains the files to be renamed or press enter if its current folder.")
     path = input()
@@ -45,34 +25,48 @@ def main():
     if path:
         os.chdir(path)
     files = os.listdir()
-    renaming_folder_path = os.getcwd()
-    program_folder_path = os.path.dirname(__file__)
+    renaming_folder_path = config['renaming_folder_path']
+    program_folder_path = config['program_folder_path']
 
-    avoid = [avoid_file, 'channel_id.txt', os.path.basename(__file__)]
+    exceptions = [exceptions_file, config['local_cache'],
+                  os.path.basename(__file__)]
     try:
-        with open(avoid_file) as f:
-            avoid.append(f.read().split("\n"))
+        with open(exceptions_file) as f:
+            exceptions.append(f.read().split("\n"))
     except:
         print("No file ignored\n")
 
-    channel_id = get_channel_id(yt_build, program_folder_path, renaming_folder_path)
+    channel_id = get_channel_id(
+        yt_build, program_folder_path, renaming_folder_path)
 
-    playlists = playlists_of_channel(yt_build, channel_id)
-    # select the playlist
-    select = int(input('Select from the above playlists: '))
-    remote_serial_dict = items_of_playlist(yt_build, playlists[select])
+    # playlists = playlists_of_channel(yt_build, channel_id)
+    # # select the playlist
+    # select = int(input('Select from the above playlists: '))
+    # remote_serial_dict = items_of_playlist(yt_build, playlists[select])
+
+    channel = YTChannel(yt_build, channel_id)
+    channel.fetch_playlists()
+    channel.select_playlist(int(input('Select from the above playlists: ')))
+    channel.generate_videos_serial()
+    remote_serial_dict = channel.get_videos_serial()
 
     print()
-    renaming_helper = RenamingHelper(remote_serial_dict, files, avoid)
-    rename_dict = renaming_helper.get_rename_dict()
+    renaming_helper = RenamingHelper(
+        remote_serial_dict, files, exceptions, character_after_serial=config['character_after_serial'])
+    renaming_helper.generate_rename_dict()
+    # rename_dict = renaming_helper.get_rename_dict()
 
-    if rename_dict:
-        dry_run(rename_dict)
+    # if rename_dict:
+    if renaming_helper.is_rename_dict_formed():
+        # dry_run(rename_dict)
+        renaming_helper.dry_run()
 
-        confirm = input("\n\nThis can't be undone. Are you sure to rename?(y/n) : ").lower()
+        confirm = input(
+            "\n\nThis can't be undone. Are you sure to rename?(y/n) : ").lower()
         print()
         if confirm == "y" or confirm == "yes":
-            batch_rename(rename_dict)
+            # batch_rename(rename_dict)
+            renaming_helper.start_batch_rename()
         else:
             print("Nothing renamed")
     else:
