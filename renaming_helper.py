@@ -1,19 +1,18 @@
 import os
-from re import T
 from typing import List
 
 
 class RenamingHelper:
-    def __init__(self, serial_dict: dict, local_files: List[str], files_to_be_avoided: List[str], character_after_serial=')'):
+    def __init__(self, serial_dict: dict, local_files: List[str], exceptions: List[str], character_after_serial=')'):
         """
         :param serial_dict:
         :param local_files:
-        :param files_to_be_avoided: list of files not to be renamed
+        :param exceptions: list of files not to be renamed
         """
         self.__character_after_serial = character_after_serial
         self.serial_dict = serial_dict
         self.local_files = local_files
-        self.files_to_be_avoided = files_to_be_avoided
+        self.exceptions = exceptions
         self.rename_dict = {}
 
     @staticmethod
@@ -35,12 +34,11 @@ class RenamingHelper:
 
     def generate_rename_dict(self):
         """
-        Simulate the renaming of files and return to be used in batch_rename function
-        :return: dict{old_filename: new_filename}
+        Simulate the renaming of files and generate dictionary to be used in batch_rename function
         """
 
         for local_file in self.local_files:
-            if local_file not in self.files_to_be_avoided and not os.path.isdir(local_file):
+            if local_file not in self.exceptions and not os.path.isdir(local_file):
                 length_difference = 1000
                 temp_remote = None
                 for remote_file in self.serial_dict:
@@ -55,10 +53,6 @@ class RenamingHelper:
                 elif not local_file.startswith(str(self.serial_dict[temp_remote])):
                     self._update_rename_dict(
                         local_file, self.serial_dict[temp_remote])
-
-    def get_rename_dict(self) -> dict:
-        # self.generate_rename_dict()
-        return self.rename_dict
 
     def is_rename_dict_formed(self) -> bool:
         return False if len(self.rename_dict) == 0 else True
@@ -82,26 +76,3 @@ class RenamingHelper:
                 print(e)
             else:
                 print(f"{old} renamed")
-
-
-# def dry_run(old_new: dict):
-#     print('\nDRY RUN\n')
-#     for old, new in old_new.items():
-#         print(f'OLD\t: {old}')
-#         print(F'NEW\t: {new}')
-#         print()
-
-
-# def batch_rename(old_new: dict):
-#     """
-#     Rename the files according to the rename_dict
-#     :param old_new: dict{old_filename: new_filename}
-#     :return: void
-#     """
-#     for old, new in old_new.items():
-#         try:
-#             os.rename(old, new)
-#         except Exception as e:
-#             print(e)
-#         else:
-#             print(f"{old} renamed")
