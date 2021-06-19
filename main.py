@@ -2,17 +2,10 @@ from googleapiclient.discovery import build, Resource
 import os
 
 from config import config
+from my_io import print_info, non_empty_input, print_warning
 from renaming_helper import RenamingHelper
-
 from cache_manager import CacheManager
-from youtube import Youtube, YTChannel
-
-
-def info():
-    print(
-        f"# If you want to ignore some files, add name of those files in {config['exceptions_file']} in the same folder in which "
-        f"files to be renamed are present (or move them in another folder).\n"
-    )
+from youtube import YTPlaylist, Youtube, YTChannel
 
 
 def ls():
@@ -34,80 +27,109 @@ def get_exceptions():
     return exceptions
 
 
-def get_channel_id(yt_resource: Resource):
+def get_playlist_id_from_cache(cache: CacheManager):
+    playlist_cache_unit = cache.local_playlist_cache.list()[0]
+    print_info(
+        f"Playlist: \"{playlist_cache_unit['title']}\" found in {os.path.join(os.path.basename(config['local_cache']),'playlist.json')}.")
+    return playlist_cache_unit['id']
+
+
+def get_playlist_id_from_youtube(cache: CacheManager, yt_resource: Resource):
+    channel_id = get_channel_id(cache, yt_resource)
+    channel = YTChannel(yt_resource, channel_id)
+    channel.fetch_playlists()
+    channel.print_playlists()
+    playlist_cache_unit = channel.select_playlist(
+        int(non_empty_input('Select playlist: ')))
+    cache.update_playlist_cache(playlist_cache_unit)
+    return playlist_cache_unit['id']
+
+
+def get_channel_id(cache: CacheManager, yt_resource: Resource):
     def get_from_yt(user_input):
         youtube = Youtube(yt_resource)
         youtube.search_channel(user_input)
         youtube.print_channels()
-        return youtube.select_channel(int(input('Select: ')))
+        return youtube.select_channel(int(non_empty_input('Select channel: ')))
 
-    cache = CacheManager(config)
-    # if cache.is_local_cache_integrated():
-    if cache.is_local_cache_available():
-        channel_with_id = cache.local_cache.list()[0]
+    if cache.is_local_channel_cache_available():
+        channel_cache_unit = cache.local_channel_cache.list()[0]
+        print_info(
+            f"Channel {channel_cache_unit['title']} found in {os.path.join(os.path.basename(config['local_cache']),'channel.json')}.")
 
-    # elif cache.is_shared_cache_integrated():
-    elif cache.is_shared_cache_available():
-        cache.shared_cache.print_channels()
-        user_input = input(
+    elif cache.is_shared_channel_cache_available():
+        cache.shared_channel_cache.print()
+        user_input = non_empty_input(
             'Select or enter channel name to search on youtube: ')
         if user_input.isdigit():
-            channel_with_id = cache.shared_cache.list()[
+            channel_cache_unit = cache.shared_channel_cache.list()[
                 int(user_input) - 1]
         else:
-            channel_with_id = get_from_yt(user_input)
+            channel_cache_unit = get_from_yt(user_input)
 
     else:
-        user_input = input('Search channel on youtube: ')
-        channel_with_id = get_from_yt(user_input)
+        user_input = non_empty_input('Search channel on youtube: ')
+        channel_cache_unit = get_from_yt(user_input)
 
-    cache.update_cache(channel_with_id)
-    cache.save()
-    return channel_with_id['channel_id']
-
-
-def get_videos_serial(channel: YTChannel):
-    channel.fetch_playlists()
-    channel.select_playlist(int(input('Select from the above playlists: ')))
-    channel.generate_videos_serial()
-    return channel.get_videos_serial()
+    cache.update_channel_cache(channel_cache_unit)
+    cache.save_shared_channel_cache()
+    return channel_cache_unit['id']
 
 
-def rename(renaming_helper: RenamingHelper):
+def get_videos_serial(playlist: YTPlaylist):
+    playlist.fetch_videos()
+    return playlist.get_videos_serial()
+
+
+def rename(renaming_helper: RenamingHelper, cache: CacheManager):
     renaming_helper.generate_rename_dict()
 
     if renaming_helper.is_rename_dict_formed():
+        cache.save()
         renaming_helper.dry_run()
 
-        confirm = input(
-            "\n\nThis can't be undone. Are you sure to rename?(y/n) : ").lower()
+        print('\n')
+        confirm = non_empty_input(
+            "This can't be undone. Are you sure to rename?(y/n) : ").lower()
         print()
         if confirm == "y" or confirm == "yes":
             renaming_helper.start_batch_rename()
         else:
             print("Nothing renamed")
     else:
-        print('\nFiles already have serial number or match not found in local files and youtube videos.')
-        print('Check if you have selected correct playlist.')
+        print_info(
+            '\nFiles already have serial number or match not found in local files and youtube videos.')
+        print_info(
+            'Check if you have selected correct playlist or clear the cache.')
 
 
 def main():
     yt_resource = build('youtube', 'v3', developerKey=config['api_key'])
-    info()
+    print_info(f"If you want to ignore some files, add name of those files in {config['exceptions_file']}"
+               f" in the same folder in which files to be renamed are present.")
     files = ls()
     exceptions = get_exceptions()
 
-    channel_id = get_channel_id(yt_resource)
+    cache = CacheManager(config)
+    if cache.is_local_playlist_cache_available():
+        playlist_id = get_playlist_id_from_cache(cache)
+    else:
+        playlist_id = get_playlist_id_from_youtube(cache, yt_resource)
 
-    channel = YTChannel(yt_resource, channel_id)
-    remote_serial_dict = get_videos_serial(channel)
+    playlist = YTPlaylist(yt_resource, playlist_id)
+    playlist.fetch_videos()
+    playlist.print_videos()
+    remote_serial_dict = playlist.get_videos_serial()
 
     print()
 
     renaming_helper = RenamingHelper(
         remote_serial_dict, files, exceptions, character_after_serial=config['character_after_serial'])
-    rename(renaming_helper)
+    rename(renaming_helper, cache)
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except:
+        print_warning('Error occured.\nPlease check your internet connection.')

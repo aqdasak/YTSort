@@ -1,3 +1,4 @@
+from my_io import print_heading, print_warning
 import os
 from typing import List
 
@@ -39,17 +40,18 @@ class RenamingHelper:
 
         for local_file in self.local_files:
             if local_file not in self.exceptions and not os.path.isdir(local_file):
-                length_difference = 1000
+                least_length_diff = 1000
                 temp_remote = None
                 for remote_file in self.serial_dict:
                     if self._remove_chars(remote_file) in self._remove_chars(local_file):
-                        if (len(local_file) - len(remote_file)) < length_difference:
-                            length_difference = len(
-                                local_file) - len(remote_file)
+
+                        length_diff = len(local_file) - len(remote_file)
+                        if (length_diff) < least_length_diff:
+                            least_length_diff = length_diff
                             temp_remote = remote_file
 
                 if temp_remote is None:
-                    print('SKIPPED:', local_file)
+                    print_warning('SKIPPED:', local_file[:75]+'...')
                 elif not local_file.startswith(str(self.serial_dict[temp_remote])):
                     self._update_rename_dict(
                         local_file, self.serial_dict[temp_remote])
@@ -58,10 +60,12 @@ class RenamingHelper:
         return False if len(self.rename_dict) == 0 else True
 
     def dry_run(self):
-        print('\nDRY RUN\n')
+        print_heading('DRY RUN')
+        u = '='*19
+        print(u, 'OLD', u + '\t' + u, 'NEW', u)
         for old, new in self.rename_dict.items():
-            print(f'OLD\t: {old}')
-            print(F'NEW\t: {new}')
+            print(old[:40]+'...', end='\t')
+            print(new[:40]+'...')
             print()
 
     def start_batch_rename(self):
@@ -75,4 +79,4 @@ class RenamingHelper:
             except Exception as e:
                 print(e)
             else:
-                print(f"{old} renamed")
+                print(f"Done: {new[:75]}...")

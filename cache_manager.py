@@ -1,74 +1,116 @@
 import os
 import json
 
-from channel_store import ChannelStore
+from cache_store import CacheStore
 
 
 class CacheManager:
     def __init__(self, config) -> None:
-        self.__local_cache_path = os.path.join(
-            config['renaming_folder_path'], config['local_cache'])
-        self.__shared_cache_path = os.path.join(
-            config['program_folder_path'], 'cache/', config['shared_cache'])
+        self.__local_playlist_cache_path = os.path.join(
+            config['local_cache'], 'playlist.json')
+        self.__local_channel_cache_path = os.path.join(
+            config['local_cache'], 'channel.json')
+        self.__shared_channel_cache_path = os.path.join(
+            config['shared_cache'], 'channel.json')
+
         self.__indent = config['cache_indent']
 
-        self._local_cache = ChannelStore()
-        self._shared_cache = ChannelStore()
+        self._local_playlist_cache = CacheStore()
+        self._local_channel_cache = CacheStore()
+        self._shared_channel_cache = CacheStore()
+
+        self.create_folder(config['local_cache'])
+        self.create_folder(config['shared_cache'])
+
         self.load()
 
     @property
-    def local_cache(self):
-        return self._local_cache
+    def local_playlist_cache(self):
+        return self._local_playlist_cache
 
     @property
-    def shared_cache(self):
-        return self._shared_cache
+    def local_channel_cache(self):
+        return self._local_channel_cache
 
-    def update_local_cache(self, channel_with_id: dict):
-        self._local_cache = ChannelStore()
-        self._local_cache.update(
-            channel_with_id['title'], channel_with_id['channel_id'])
+    @property
+    def shared_channel_cache(self):
+        return self._shared_channel_cache
 
-    def update_shared_cache(self, channel_with_id: dict):
-        self._shared_cache.update(
-            channel_with_id['title'], channel_with_id['channel_id'])
+    @staticmethod
+    def _create_cache(cache_unit: dict):
+        local_cache = CacheStore()
+        local_cache.update(
+            cache_unit['title'], cache_unit['id'])
+        return local_cache
+
+    def update_playlist_cache(self, playlist_cache_unit: dict):
+        self.update_local_playlist_cache(playlist_cache_unit)
+
+    def update_channel_cache(self, channel_cache_unit: dict):
+        self.update_local_channel_cache(channel_cache_unit)
+        self.update_shared_channel_cache(channel_cache_unit)
+
+    def update_local_playlist_cache(self, playlist_cache_unit: dict):
+        self._local_playlist_cache = self._create_cache(playlist_cache_unit)
+
+    def update_local_channel_cache(self, channel_cache_unit: dict):
+        self._local_channel_cache = self._create_cache(channel_cache_unit)
+
+    def update_shared_channel_cache(self, channel_cache_unit: dict):
+        self._shared_channel_cache.update(
+            channel_cache_unit['title'], channel_cache_unit['id'])
 
     def load(self):
-        self.load_local_cache()
-        self.load_shared_cache()
+        self.load_local_playlist_cache()
+        self.load_local_channel_cache()
+        self.load_shared_channel_cache()
 
-    def load_local_cache(self):
-        r = ChannelStore.retrieve_from_file(self.__local_cache_path)
+    def load_local_playlist_cache(self):
+        r = CacheStore.retrieve_from_file(self.__local_playlist_cache_path)
         if r:
-            self._local_cache.load(r)
+            self._local_playlist_cache.load(r)
 
-    def load_shared_cache(self):
-        r = ChannelStore.retrieve_from_file(self.__shared_cache_path)
+    def load_local_channel_cache(self):
+        r = CacheStore.retrieve_from_file(self.__local_channel_cache_path)
         if r:
-            self._shared_cache.load(r)
+            self._local_channel_cache.load(r)
 
-    def is_local_cache_available(self):
-        return True if self._local_cache.len > 0 else False
+    def load_shared_channel_cache(self):
+        r = CacheStore.retrieve_from_file(self.__shared_channel_cache_path)
+        if r:
+            self._shared_channel_cache.load(r)
 
-    def is_shared_cache_available(self):
-        return True if self._shared_cache.len > 0 else False
+    @staticmethod
+    def create_folder(folder):
+        if not os.path.exists(folder):
+            os.mkdir(folder)
 
-    def update_cache(self, channel_with_id: dict):
-        self.update_local_cache(channel_with_id)
-        self.update_shared_cache(channel_with_id)
+    def is_local_playlist_cache_available(self):
+        return True if self._local_playlist_cache.len > 0 else False
+
+    def is_local_channel_cache_available(self):
+        return True if self._local_channel_cache.len > 0 else False
+
+    def is_shared_channel_cache_available(self):
+        return True if self._shared_channel_cache.len > 0 else False
 
     def _dump(self, path, cache_list: list):
         with open(path, 'w') as f:
             json.dump(cache_list, f, indent=self.__indent)
 
     def save(self):
-        self.save_local_cache()
-        self.save_shared_cache()
+        self.save_local_playlist_cache()
+        self.save_local_channel_cache()
+        self.save_shared_channel_cache()
 
-    def save_local_cache(self):
-        if self.is_local_cache_available:
-            self._dump(self.__local_cache_path, self.local_cache.list())
+    def save_local_playlist_cache(self):
+        self._dump(self.__local_playlist_cache_path,
+                   self.local_playlist_cache.list())
 
-    def save_shared_cache(self):
-        if self.is_shared_cache_available:
-            self._dump(self.__shared_cache_path, self.shared_cache.list())
+    def save_local_channel_cache(self):
+        self._dump(self.__local_channel_cache_path,
+                   self.local_channel_cache.list())
+
+    def save_shared_channel_cache(self):
+        self._dump(self.__shared_channel_cache_path,
+                   self.shared_channel_cache.list())
