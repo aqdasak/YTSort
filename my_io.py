@@ -1,3 +1,5 @@
+import contextlib
+import io
 from colorama import Fore as c, Style
 
 
@@ -22,8 +24,19 @@ def print_warning(*args):
 
 
 def print_heading(*args):
+    print()
     print(Style.BRIGHT+c.LIGHTBLUE_EX, end='')
-    st = '<< ' + arg_parse(*args) + ' >>'
+    st = arg_parse(*args)
     print(st)
     print('-'*len(st), end='')
     print(c.RESET + Style.NORMAL)
+
+
+def capture_stdout(func) -> list:
+    f = io.StringIO()
+    with contextlib.redirect_stdout(f):
+        func()
+    output = f.getvalue()
+    output = output.split('\n')
+    output.remove('')
+    return output
