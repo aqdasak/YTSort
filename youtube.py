@@ -77,18 +77,31 @@ class Youtube:
         return shorten_M_K(yt_response['items'][0]['statistics']['subscriberCount'])
 
     def _fetch_subscribers_of_all(self):
-        def get_subs(channel_id):
+
+        def get_subs(channel_id, index):
             subs = self.subscriber_count(channel_id)
             if not subs:
                 subs = 'Hidden'
-            self._subscribers.append(subs)
+            self._subscribers[index] = subs
+
+        self._subscribers = [None]*self._channel_store.len
+        # threads = []
 
         progress = ProgressBar()
         progress.total = self._channel_store.len
 
         for index, channel_cache_unit in enumerate(self._channel_store.list()):
-            get_subs(channel_cache_unit['id'])
+            # # print(channel_cache_unit['title'], channel_cache_unit['id'])
+            # # input()
+            # thread = Thread(target=get_subs, args=(channel_cache_unit['id'], index))
+            # thread.start()
+            # threads.append(thread)
+
+            get_subs(channel_cache_unit['id'], index)
             progress.update(index+1)
+
+        # for thread in threads:
+        #     thread.join()
 
 
 class YTChannel:
