@@ -76,11 +76,6 @@ def get_channel_id(cache: CacheManager, yt_resource: Resource):
     return channel_cache_unit['id']
 
 
-# def get_videos_serial(playlist: YTPlaylist):
-#     playlist.fetch_videos()
-#     return playlist.get_videos_serial()
-
-
 def rename(renaming_helper: RenamingHelper, cache: CacheManager):
     renaming_helper.generate_rename_dict()
 

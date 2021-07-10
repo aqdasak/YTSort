@@ -1,10 +1,11 @@
 from googleapiclient.discovery import Resource
 from math import ceil
+from threading import Thread
+from copy import deepcopy
 
 from my_io import capture_stdout, print_heading
 from progress_bar2 import ProgressBar
 from cache_store import CacheStore
-from config import config
 
 
 class Youtube:
@@ -31,17 +32,13 @@ class Youtube:
             )
 
     def print_channels(self):
-        if config['show_subscribers']:
-            channel_output = capture_stdout(
-                lambda: self._channel_store.print())
-            self._fetch_subscribers_of_all()
+        channel_output = capture_stdout(
+            lambda: self._channel_store.print())
+        self._fetch_subscribers_of_all()
 
-            print_heading('#   Channel (Subscribers)')
-            for index, out in enumerate(channel_output):
-                print(f'{out} ({self._subscribers[index]})')
-        else:
-            print_heading('#   Channel')
-            self._channel_store.print()
+        print_heading('#   Channel (Subscribers)')
+        for index, out in enumerate(channel_output):
+            print(f'{out} ({self._subscribers[index]})')
 
     def select_channel(self, channel_no: int):
         return self._channel_store.list()[channel_no-1]
@@ -66,18 +63,19 @@ class Youtube:
                     subs = subs[:4]+'K'
             return subs
 
-        yt_response = self._yt_resource.channels().list(
+        # self._yt_resource is not working if used directly in multi-threading. Problem not known.
+        # Error: malloc(): unsorted double linked list corrupted
+        # Using deepcopy it works fine
+        yt_response = deepcopy(self._yt_resource).channels().list(
             part='statistics',
             id=channel_id,
         ).execute()
 
         if yt_response['items'][0]['statistics']['hiddenSubscriberCount']:
             return
-
         return shorten_M_K(yt_response['items'][0]['statistics']['subscriberCount'])
 
     def _fetch_subscribers_of_all(self):
-
         def get_subs(channel_id, index):
             subs = self.subscriber_count(channel_id)
             if not subs:
@@ -85,23 +83,16 @@ class Youtube:
             self._subscribers[index] = subs
 
         self._subscribers = [None]*self._channel_store.len
-        # threads = []
 
-        progress = ProgressBar()
-        progress.total = self._channel_store.len
-
+        threads = []
         for index, channel_cache_unit in enumerate(self._channel_store.list()):
-            # # print(channel_cache_unit['title'], channel_cache_unit['id'])
-            # # input()
-            # thread = Thread(target=get_subs, args=(channel_cache_unit['id'], index))
-            # thread.start()
-            # threads.append(thread)
+            thread = Thread(target=get_subs, args=(
+                channel_cache_unit['id'], index))
+            threads.append(thread)
+            thread.start()
 
-            get_subs(channel_cache_unit['id'], index)
-            progress.update(index+1)
-
-        # for thread in threads:
-        #     thread.join()
+        for thread in threads:
+            thread.join()
 
 
 class YTChannel:
