@@ -17,6 +17,9 @@ class DataStore:
     def list(self) -> list:
         return self._value
 
+    def purge(self):
+        self._value = []
+
     @property
     def len(self):
         return len(self._value)

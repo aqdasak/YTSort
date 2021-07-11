@@ -31,6 +31,11 @@ def get_playlist_id_from_cache(cache: CacheManager):
     playlist_cache_unit = cache.local_playlist_cache.list()[0]
     print_info(
         f"Playlist: \"{playlist_cache_unit['title']}\" found in {os.path.join(os.path.basename(config['local_cache']),'playlist.json')}.")
+    inp = non_empty_input('Is the playlist correct?(n if no): ').lower()
+    if inp in ('n', 'no'):
+        cache.delete_local_playlist_cache()
+        print()
+        return None
     return playlist_cache_unit['id']
 
 
@@ -56,6 +61,11 @@ def get_channel_id(cache: CacheManager, yt_resource: Resource):
         channel_cache_unit = cache.local_channel_cache.list()[0]
         print_info(
             f"Channel {channel_cache_unit['title']} found in {os.path.join(os.path.basename(config['local_cache']),'channel.json')}.")
+        inp = non_empty_input('Is the channel correct?(n if no): ').lower()
+        if inp in ('n', 'no'):
+            cache.delete_local_channel_cache()
+            print()
+            return get_channel_id(cache, yt_resource)
 
     elif cache.is_shared_channel_cache_available():
         cache.shared_channel_cache.print()
@@ -85,7 +95,7 @@ def rename(renaming_helper: RenamingHelper, cache: CacheManager):
 
         print('\n')
         confirm = non_empty_input(
-            "This can't be undone. Are you sure to rename?(y/n) : ").lower()
+            "This can't be undone. Are you sure to rename?(y/n): ").lower()
         print()
         if confirm == "y" or confirm == "yes":
             renaming_helper.start_batch_rename()
@@ -95,7 +105,7 @@ def rename(renaming_helper: RenamingHelper, cache: CacheManager):
         print_info(
             '\nFiles already have serial number or match not found in local files and youtube videos.')
         print_info(
-            'Check if you have selected correct playlist or clear the cache.')
+            'Check if you have selected correct playlist.')
 
 
 def main():
@@ -108,6 +118,8 @@ def main():
     cache = CacheManager(config)
     if cache.is_local_playlist_cache_available():
         playlist_id = get_playlist_id_from_cache(cache)
+        if playlist_id is None:
+            playlist_id = get_playlist_id_from_youtube(cache, yt_resource)
     else:
         playlist_id = get_playlist_id_from_youtube(cache, yt_resource)
 

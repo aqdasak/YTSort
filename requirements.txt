@@ -1,0 +1,5 @@
+alive-progress==1.6.2
+colorama==0.3.7
+google-api-core==1.30.0
+google-api-python-client==2.8.0
+googleapis-common-protos==1.53.0

@@ -114,3 +114,17 @@ class CacheManager:
     def save_shared_channel_cache(self):
         self._dump(self.__shared_channel_cache_path,
                    self.shared_channel_cache.list())
+
+    def delete_local_playlist_cache(self):
+        self._local_playlist_cache.purge()
+        try:
+            os.remove(self.__local_playlist_cache_path)
+        except:
+            pass
+
+    def delete_local_channel_cache(self):
+        self._local_channel_cache.purge()
+        try:
+            os.remove(self.__local_channel_cache_path)
+        except:
+            pass
