@@ -1,7 +1,7 @@
 import os
 import json
 
-from cache_store import CacheStore
+from data_store import DataStore
 
 
 class CacheManager:
@@ -15,9 +15,9 @@ class CacheManager:
 
         self.__indent = config['cache_indent']
 
-        self._local_playlist_cache = CacheStore()
-        self._local_channel_cache = CacheStore()
-        self._shared_channel_cache = CacheStore()
+        self._local_playlist_cache = DataStore()
+        self._local_channel_cache = DataStore()
+        self._shared_channel_cache = DataStore()
 
         self.create_folder(config['local_cache'])
         self.create_folder(config['shared_cache'])
@@ -38,7 +38,7 @@ class CacheManager:
 
     @staticmethod
     def _create_cache(cache_unit: dict):
-        local_cache = CacheStore()
+        local_cache = DataStore()
         local_cache.update(
             cache_unit['title'], cache_unit['id'])
         return local_cache
@@ -66,17 +66,17 @@ class CacheManager:
         self.load_shared_channel_cache()
 
     def load_local_playlist_cache(self):
-        r = CacheStore.retrieve_from_file(self.__local_playlist_cache_path)
+        r = DataStore.retrieve_from_file(self.__local_playlist_cache_path)
         if r:
             self._local_playlist_cache.load(r)
 
     def load_local_channel_cache(self):
-        r = CacheStore.retrieve_from_file(self.__local_channel_cache_path)
+        r = DataStore.retrieve_from_file(self.__local_channel_cache_path)
         if r:
             self._local_channel_cache.load(r)
 
     def load_shared_channel_cache(self):
-        r = CacheStore.retrieve_from_file(self.__shared_channel_cache_path)
+        r = DataStore.retrieve_from_file(self.__shared_channel_cache_path)
         if r:
             self._shared_channel_cache.load(r)
 

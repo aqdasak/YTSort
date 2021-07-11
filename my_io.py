@@ -15,6 +15,29 @@ def non_empty_input(arg):
             return inp
 
 
+def input_in_range(msg, a, b=None) -> float:
+    if b is not None:
+        if b <= a:
+            raise ValueError('Upper bound should be greater than lower bound')
+        lb = a
+        ub = b
+    else:
+        if a <= 0:
+            raise ValueError('Upper bound should be greater than 0')
+        lb = 0
+        ub = a
+
+    while True:
+        inp = non_empty_input(msg)
+        try:
+            inp = float(inp)
+            if lb <= inp < ub:
+                return inp
+            print_warning(f'Warning: Input range is [{lb},{ub})')
+        except:
+            print_warning(f'Warning: Please input a number')
+
+
 def print_info(*args):
     print(c.LIGHTYELLOW_EX + arg_parse(*args) + c.RESET)
 

@@ -2,7 +2,7 @@ from googleapiclient.discovery import build, Resource
 import os
 
 from config import config
-from my_io import print_info, non_empty_input, print_warning
+from my_io import input_in_range, print_info, non_empty_input, print_warning
 from renaming_helper import RenamingHelper
 from cache_manager import CacheManager
 from youtube import YTPlaylist, Youtube, YTChannel
@@ -40,7 +40,7 @@ def get_playlist_id_from_youtube(cache: CacheManager, yt_resource: Resource):
     channel.fetch_playlists()
     channel.print_playlists()
     playlist_cache_unit = channel.select_playlist(
-        int(non_empty_input('Select playlist: ')))
+        int(input_in_range('Select playlist: ', 1, channel.total_playlists+1)))
     cache.update_playlist_cache(playlist_cache_unit)
     return playlist_cache_unit['id']
 
@@ -50,7 +50,7 @@ def get_channel_id(cache: CacheManager, yt_resource: Resource):
         youtube = Youtube(yt_resource)
         youtube.search_channel(user_input)
         youtube.print_channels()
-        return youtube.select_channel(int(non_empty_input('Select channel: ')))
+        return youtube.select_channel(int(input_in_range('Select channel: ', 1, youtube.total_channels+1)))
 
     if cache.is_local_channel_cache_available():
         channel_cache_unit = cache.local_channel_cache.list()[0]

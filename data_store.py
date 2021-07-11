@@ -1,16 +1,16 @@
 import json
 
 
-class CacheStore:
+class DataStore:
     def __init__(self):
         self._value = []
 
     @staticmethod
-    def cache_unit(title, id):
+    def data_unit(title, id):
         return {'title': title, 'id': id}
 
     def update(self, title, id):
-        value = self.cache_unit(title, id)
+        value = self.data_unit(title, id)
         if value not in self._value:
             self._value.append(value)
 
@@ -30,19 +30,19 @@ class CacheStore:
 
     @classmethod
     def retrieve_from_file(cls, file_fullpath):
-        new_cache_units = []
+        new_data_units = []
 
-        def retrieve(cache_units) -> bool:
-            if type(cache_units) == dict:
+        def retrieve(data_units) -> bool:
+            if type(data_units) == dict:
                 try:
-                    title, id = cache_units.keys()
+                    title, id = data_units.keys()
                     if title == 'title' and id == 'id':
-                        new_cache_units.append(cache_units)
+                        new_data_units.append(data_units)
                 except:
                     pass
-            elif type(cache_units) == list:
-                for cache_unit in cache_units:
-                    retrieve(cache_unit)
+            elif type(data_units) == list:
+                for data_unit in data_units:
+                    retrieve(data_unit)
 
         try:
             with open(file_fullpath) as f:
@@ -53,19 +53,19 @@ class CacheStore:
                     pass
         except:
             pass
-        cache_store = cls()
-        cache_store._value = new_cache_units
-        return cache_store
+        data_store = cls()
+        data_store._value = new_data_units
+        return data_store
 
-    def load(self, cache_store):
+    def load(self, data_store):
         """
-        Used to load another CacheStore into this CacheStore.
+        Used to load another DataStore into this DataStore.
         Used with caution, value added by load() can cause duplication.
         """
-        if type(cache_store) != CacheStore:
+        if type(data_store) != DataStore:
             raise TypeError(
                 f"Only {self.__class__.__name__} object can be loaded")
-        self._value += cache_store.list()
+        self._value += data_store.list()
 
     def __str__(self):
         return f'{self.__class__.__name__}{self.list()}'

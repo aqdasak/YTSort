@@ -1,11 +1,11 @@
 from googleapiclient.discovery import Resource
-from math import ceil
 from threading import Thread
 from copy import deepcopy
+from alive_progress import alive_bar
+from math import ceil
 
 from my_io import capture_stdout, print_heading
-from progress_bar2 import ProgressBar
-from cache_store import CacheStore
+from data_store import DataStore
 
 
 class Youtube:
@@ -14,8 +14,12 @@ class Youtube:
         :param yt_resource: googleapiclient.discovery.build object
         """
         self._yt_resource = yt_resource
-        self._channel_store = CacheStore()
+        self._channel_store = DataStore()
         self._subscribers = []
+
+    @property
+    def total_channels(self):
+        return self._channel_store.len
 
     def search_channel(self, query: str) -> list:
         yt_request = self._yt_resource.search().list(
@@ -76,23 +80,25 @@ class Youtube:
         return shorten_M_K(yt_response['items'][0]['statistics']['subscriberCount'])
 
     def _fetch_subscribers_of_all(self):
-        def get_subs(channel_id, index):
+        def get_subs(channel_id, index, progress_bar):
             subs = self.subscriber_count(channel_id)
             if not subs:
                 subs = 'Hidden'
             self._subscribers[index] = subs
+            progress_bar()
 
         self._subscribers = [None]*self._channel_store.len
 
-        threads = []
-        for index, channel_cache_unit in enumerate(self._channel_store.list()):
-            thread = Thread(target=get_subs, args=(
-                channel_cache_unit['id'], index))
-            threads.append(thread)
-            thread.start()
+        with alive_bar(total=len(self._subscribers), bar='smooth', spinner='dots_reverse') as bar:
+            threads = []
+            for index, channel_cache_unit in enumerate(self._channel_store.list()):
+                thread = Thread(target=get_subs, args=(
+                    channel_cache_unit['id'], index, bar))
+                threads.append(thread)
+                thread.start()
 
-        for thread in threads:
-            thread.join()
+            for thread in threads:
+                thread.join()
 
 
 class YTChannel:
@@ -103,34 +109,39 @@ class YTChannel:
         """
         self._yt_resource = yt_resource
         self._channel_id = channel_id
-        self._playlist_store = CacheStore()
+        self._playlist_store = DataStore()
+
+    @property
+    def total_playlists(self):
+        return self._playlist_store.len
 
     def fetch_playlists(self):
-        nextPageToken = None
-        page = 1
-        bar = ProgressBar()
-        while True:
-            pl_request = self._yt_resource.playlists().list(
-                part='snippet',
-                channelId=self._channel_id,
-                pageToken=nextPageToken
-            )
-            pl_response = pl_request.execute()
+        with alive_bar(manual=True, bar='smooth', spinner='dots_reverse') as bar:
 
-            for item in pl_response['items']:
-                self._playlist_store.update(
-                    title=item['snippet']['title'], id=item['id']
+            nextPageToken = None
+            page = 1
+            while True:
+                pl_request = self._yt_resource.playlists().list(
+                    part='snippet',
+                    channelId=self._channel_id,
+                    pageToken=nextPageToken
                 )
+                pl_response = pl_request.execute()
 
-            if page == 1:
-                bar.total = ceil(
-                    pl_response['pageInfo']['totalResults'] / pl_response['pageInfo']['resultsPerPage'])
-            bar.update(page)
-            page += 1
-            nextPageToken = pl_response.get('nextPageToken')
-            if not nextPageToken:
-                print()
-                break
+                for item in pl_response['items']:
+                    self._playlist_store.update(
+                        title=item['snippet']['title'], id=item['id']
+                    )
+
+                bar(page / ceil(pl_response['pageInfo']['totalResults'] /
+                                pl_response['pageInfo']['resultsPerPage']))
+
+                page += 1
+
+                nextPageToken = pl_response.get('nextPageToken')
+                if not nextPageToken:
+                    break
+        print()
 
     def print_playlists(self):
         print_heading('<< PLAYLISTS >>')
@@ -148,35 +159,34 @@ class YTPlaylist:
         """
         self._yt_resource = yt_resource
         self._playlist_id = playlist_id
-        self._videos_store = CacheStore()
+        self._videos_store = DataStore()
 
     def fetch_videos(self):
-        nextPageToken = None
-        page = 1
-        bar = ProgressBar()
-        while True:
-            pl_item_request = self._yt_resource.playlistItems().list(
-                part='snippet',
-                playlistId=self._playlist_id,
-                pageToken=nextPageToken
-            )
-            pl_item_response = pl_item_request.execute()
+        with alive_bar(manual=True, bar='smooth', spinner='dots_reverse') as bar:
 
-            for item in pl_item_response['items']:
-                self._videos_store.update(
-                    title=item['snippet']['title'], id='#'
+            nextPageToken = None
+            page = 1
+            while True:
+                pl_item_request = self._yt_resource.playlistItems().list(
+                    part='snippet',
+                    playlistId=self._playlist_id,
+                    pageToken=nextPageToken
                 )
+                pl_item_response = pl_item_request.execute()
 
-            if page == 1:
-                bar.total = ceil(
-                    pl_item_response['pageInfo']['totalResults'] / pl_item_response['pageInfo']['resultsPerPage'])
-            bar.update(page)
-            page += 1
+                for item in pl_item_response['items']:
+                    self._videos_store.update(
+                        title=item['snippet']['title'], id='#'
+                    )
 
-            nextPageToken = pl_item_response.get('nextPageToken')
-            if not nextPageToken:
-                print()
-                break
+                bar(page / ceil(pl_item_response['pageInfo']['totalResults'] /
+                                pl_item_response['pageInfo']['resultsPerPage']))
+                page += 1
+
+                nextPageToken = pl_item_response.get('nextPageToken')
+                if not nextPageToken:
+                    break
+        print()
 
     def print_videos(self):
         print_heading('<< VIDEOS IN THE PLAYLIST >>')
