@@ -29,7 +29,7 @@ class DataStore:
             for i, item in enumerate(self.list()):
                 print(i + 1, '-', item['title'])
         else:
-            print('List is empty')
+            raise Exception('Datastore is empty')
 
     @classmethod
     def retrieve_from_file(cls, file_fullpath):

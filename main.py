@@ -53,7 +53,12 @@ def get_playlist_id_from_youtube(cache: CacheManager, yt_resource: Resource):
 def get_channel_id(cache: CacheManager, yt_resource: Resource):
     def get_from_yt(user_input):
         youtube = Youtube(yt_resource)
-        youtube.search_channel(user_input)
+        while True:
+            youtube.search_channel(user_input)
+            if youtube._channel_store.len > 0:
+                break
+            else:
+                user_input = non_empty_input('Not found search again: ')
         youtube.print_channels()
         return youtube.select_channel(int(input_in_range('Select channel: ', 1, youtube.total_channels+1)))
 
