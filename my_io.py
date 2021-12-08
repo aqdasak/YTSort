@@ -7,6 +7,11 @@ def arg_parse(*args):
     return ' '.join(tuple(map(lambda x: str(x), args)))
 
 
+def take_input(arg):
+    arg = c.LIGHTGREEN_EX + arg + c.RESET
+    return input(arg)
+
+
 def non_empty_input(arg):
     arg = c.LIGHTGREEN_EX + arg + c.RESET
     while True:
@@ -34,7 +39,7 @@ def input_in_range(msg, a, b=None) -> float:
             if lb <= inp < ub:
                 return inp
             print_warning(f'Warning: Input range is [{lb},{ub})')
-        except:
+        except Exception:
             print_warning(f'Warning: Please input a number')
 
 

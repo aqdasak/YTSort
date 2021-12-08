@@ -41,7 +41,7 @@ class DataStore:
                     title, id = data_units.keys()
                     if title == 'title' and id == 'id':
                         new_data_units.append(data_units)
-                except:
+                except Exception:
                     pass
             elif type(data_units) == list:
                 for data_unit in data_units:
@@ -52,9 +52,9 @@ class DataStore:
                 try:
                     file = json.load(f)
                     retrieve(file)
-                except Exception as e:
+                except Exception:
                     pass
-        except:
+        except Exception:
             pass
         data_store = cls()
         data_store._value = new_data_units

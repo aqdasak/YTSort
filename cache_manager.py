@@ -119,12 +119,12 @@ class CacheManager:
         self._local_playlist_cache.purge()
         try:
             os.remove(self.__local_playlist_cache_path)
-        except:
+        except Exception:
             pass
 
     def delete_local_channel_cache(self):
         self._local_channel_cache.purge()
         try:
             os.remove(self.__local_channel_cache_path)
-        except:
+        except Exception:
             pass

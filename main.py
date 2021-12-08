@@ -2,7 +2,7 @@ from googleapiclient.discovery import build, Resource
 import os
 
 from config import config
-from my_io import input_in_range, print_info, non_empty_input, print_warning
+from my_io import input_in_range, print_info, non_empty_input, print_warning, take_input
 from renaming_helper import RenamingHelper
 from cache_manager import CacheManager
 from youtube import YTPlaylist, Youtube, YTChannel
@@ -22,7 +22,7 @@ def get_exceptions():
     try:
         with open(config['exceptions_file']) as f:
             exceptions.append(f.read().split("\n"))
-    except:
+    except Exception:
         print("No file ignored\n")
     return exceptions
 
@@ -31,7 +31,7 @@ def get_playlist_id_from_cache(cache: CacheManager):
     playlist_cache_unit = cache.local_playlist_cache.list()[0]
     print_info(
         f"Playlist: \"{playlist_cache_unit['title']}\" found in {os.path.join(os.path.basename(config['local_cache']),'playlist.json')}.")
-    inp = non_empty_input('Is the playlist correct?(n if no): ').lower()
+    inp = take_input('Is the playlist correct?(n if no): ').lower()
     if inp in ('n', 'no'):
         cache.delete_local_playlist_cache()
         print()
@@ -66,7 +66,7 @@ def get_channel_id(cache: CacheManager, yt_resource: Resource):
         channel_cache_unit = cache.local_channel_cache.list()[0]
         print_info(
             f"Channel {channel_cache_unit['title']} found in {os.path.join(os.path.basename(config['local_cache']),'channel.json')}.")
-        inp = non_empty_input('Is the channel correct?(n if no): ').lower()
+        inp = take_input('Is the channel correct?(n if no): ').lower()
         if inp in ('n', 'no'):
             cache.delete_local_channel_cache()
             print()
@@ -100,9 +100,9 @@ def rename(renaming_helper: RenamingHelper, cache: CacheManager):
 
         print('\n')
         confirm = non_empty_input(
-            "This can't be undone. Are you sure to rename?(y/n): ").lower()
+            "This can't be undone. Are you sure to rename?(y if yes): ").lower()
         print()
-        if confirm == "y" or confirm == "yes":
+        if confirm in ('y', 'yes'):
             renaming_helper.start_batch_rename()
         else:
             print("Nothing renamed")
@@ -136,12 +136,12 @@ def main():
     print()
 
     renaming_helper = RenamingHelper(
-        remote_serial_dict, files, exceptions, character_after_serial=config['character_after_serial'])
+        remote_serial_dict, files, exceptions, character_after_serial=config['character_after_serial'], padded_zero=config['padded_zero'])
     rename(renaming_helper, cache)
 
 
 if __name__ == '__main__':
     try:
         main()
-    except:
+    except Exception:
         print_warning('Error occured.\nPlease check your internet connection.')

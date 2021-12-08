@@ -4,7 +4,7 @@ from typing import List
 
 
 class RenamingHelper:
-    def __init__(self, serial_dict: dict, local_files: List[str], exceptions: List[str], character_after_serial=')'):
+    def __init__(self, serial_dict: dict, local_files: List[str], exceptions: List[str], character_after_serial=')', padded_zero=False):
         """
         :param serial_dict:
         :param local_files:
@@ -15,6 +15,12 @@ class RenamingHelper:
         self.local_files = local_files
         self.exceptions = exceptions
         self.rename_dict = {}
+        if padded_zero:
+            self._file_prefix = self.__padded_zero_file_prefix
+            self._len_digits = len(str(len(serial_dict)))
+            # self._len_digits=floor(log(len(serial_dict),10))+1
+        else:
+            self._file_prefix = self.__unpadded_zero_file_prefix
 
     @staticmethod
     def _remove_chars(st: str):
@@ -29,7 +35,19 @@ class RenamingHelper:
                 st2 += ch
         return st2
 
+    def _file_prefix(self, serial):
+        # set in __init__()
+        pass
+
+    def __padded_zero_file_prefix(self, serial):
+        return f'{serial:0{self._len_digits}d}'
+
+    def __unpadded_zero_file_prefix(self, serial):
+        return str(serial)
+
     def _update_rename_dict(self, local_filename: str, index: int):
+        index = self._file_prefix(index)
+
         self.rename_dict.update(
             {local_filename: f'{index}{self.__character_after_serial} {local_filename}'})
 
@@ -52,7 +70,7 @@ class RenamingHelper:
 
                 if temp_remote is None:
                     print_warning('SKIPPED:', local_file[:75]+'...')
-                elif not local_file.startswith(str(self.serial_dict[temp_remote])):
+                elif not local_file.startswith(self._file_prefix(self.serial_dict[temp_remote])):
                     self._update_rename_dict(
                         local_file, self.serial_dict[temp_remote])
 
