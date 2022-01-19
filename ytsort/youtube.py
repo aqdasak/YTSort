@@ -4,8 +4,8 @@ from copy import deepcopy
 from alive_progress import alive_bar
 from math import ceil
 
-from my_io import capture_stdout, print_heading
-from data_store import DataStore
+from ytsort.my_io import capture_stdout, print_heading
+from ytsort.data_store import DataStore
 
 
 class Youtube:

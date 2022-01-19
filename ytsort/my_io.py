@@ -1,5 +1,6 @@
 import contextlib
 import io
+from getpass import getpass
 from colorama import Fore as c, Style
 
 
@@ -16,6 +17,14 @@ def non_empty_input(arg):
     arg = c.LIGHTGREEN_EX + arg + c.RESET
     while True:
         inp = input(arg)
+        if inp != '':
+            return inp
+
+
+def non_empty_getpass(arg):
+    arg = c.LIGHTGREEN_EX + arg + c.RESET
+    while True:
+        inp = getpass(arg)
         if inp != '':
             return inp
 

@@ -1,3 +1,6 @@
+# These are defaults. 'character_after_serial' and 'padded_zero'
+# can be changed from command line options. 'api_key' can be provided while running.
+
 import os
 
 config = {

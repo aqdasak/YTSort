@@ -1,6 +1,7 @@
-from my_io import print_heading, print_warning
 import os
 from typing import List
+
+from ytsort.my_io import print_heading, print_warning
 
 
 class RenamingHelper:

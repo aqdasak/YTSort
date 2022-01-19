@@ -1,4 +1,7 @@
 .idea
 __pycache__
-ATemp.py
+ATemp*
 .ytsort_cache/
+build/
+dist/
+ytsort.egg-info/

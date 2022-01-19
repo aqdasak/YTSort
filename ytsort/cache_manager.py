@@ -1,7 +1,7 @@
 import os
 import json
 
-from data_store import DataStore
+from ytsort.data_store import DataStore
 
 
 class CacheManager:

@@ -1,19 +1,12 @@
-from googleapiclient.discovery import build, Resource
+import click
 import os
+from googleapiclient.discovery import build, Resource
 
-from config import config
-from my_io import input_in_range, print_info, non_empty_input, print_warning, take_input
-from renaming_helper import RenamingHelper
-from cache_manager import CacheManager
-from youtube import YTPlaylist, Youtube, YTChannel
-
-
-def ls():
-    # print("Input the path of the folder that contains the files to be renamed or press enter if its current folder.")
-    # path = input()
-    # if path:
-    #     os.chdir(path)
-    return os.listdir()
+from ytsort.config import config
+from ytsort.my_io import input_in_range, non_empty_getpass, print_info, non_empty_input, print_warning, take_input
+from ytsort.renaming_helper import RenamingHelper
+from ytsort.cache_manager import CacheManager
+from ytsort.youtube import YTPlaylist, Youtube, YTChannel
 
 
 def get_exceptions():
@@ -30,7 +23,7 @@ def get_exceptions():
 def get_playlist_id_from_cache(cache: CacheManager):
     playlist_cache_unit = cache.local_playlist_cache.list()[0]
     print_info(
-        f"Playlist: \"{playlist_cache_unit['title']}\" found in {os.path.join(os.path.basename(config['local_cache']),'playlist.json')}.")
+        f"Playlist: \"{playlist_cache_unit['title']}\" found in cache.")
     inp = take_input('Is the playlist correct?(n if no): ').lower()
     if inp in ('n', 'no'):
         cache.delete_local_playlist_cache()
@@ -113,11 +106,11 @@ def rename(renaming_helper: RenamingHelper, cache: CacheManager):
             'Check if you have selected correct playlist.')
 
 
-def main():
+def main2():
     yt_resource = build('youtube', 'v3', developerKey=config['api_key'])
     print_info(f"If you want to ignore some files, add name of those files in {config['exceptions_file']}"
                f" in the same folder in which files to be renamed are present.")
-    files = ls()
+    files = os.listdir()
     exceptions = get_exceptions()
 
     cache = CacheManager(config)
@@ -140,8 +133,32 @@ def main():
     rename(renaming_helper, cache)
 
 
-if __name__ == '__main__':
+@click.command()
+@click.option('-c', '--character', help='Character after serial.')
+@click.option('-p', '--padded-zero', is_flag=True, help='Padded zero.')
+@click.option('-np', '--no-padded-zero', is_flag=True, help='No padded zero.')
+def main(character, padded_zero, no_padded_zero):
+    if character is not None:
+        config['character_after_serial'] = character
+
+    if padded_zero and not no_padded_zero:
+        config['padded_zero'] = True
+    elif not padded_zero and no_padded_zero:
+        config['padded_zero'] = False
+    # else default in config is used
+
+    if config['api_key'] is None:
+        config['api_key'] = non_empty_getpass('Please provide api key: ')
+        print('You can set your api key to the environment variable YOUTUBE_DATA_API_KEY')
+
     try:
-        main()
+        main2()
+    except KeyboardInterrupt:
+        print('\nAborted!')
     except Exception:
-        print_warning('Error occured.\nPlease check your internet connection.')
+        print_warning(
+            'Error occured.\nPlease check your internet connection or API key.')
+
+
+if __name__ == '__main__':
+    main()
