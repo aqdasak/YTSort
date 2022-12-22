@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "ytsort"
+version = "1.0.1"
+description = "Arrange downloaded youtube videos"
+authors = ["Aqdas Ahmad Khan <aqdasak@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.scripts]
+ytsort = "ytsort.__main__:main"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+alive-progress = "1.6.2"
+colorama = "^0.3.7"
+google-api-python-client = "^2.8.0"
+click = "^8.0.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
