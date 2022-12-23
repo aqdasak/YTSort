@@ -17,11 +17,10 @@ class Youtube:
         self._channel_store = DataStore()
         self._subscribers = []
 
-    @property
-    def total_channels(self):
-        return len(self._channel_store)
+    def channels(self) -> DataStore:
+        return self._channel_store
 
-    def search_channel(self, query: str) -> list:
+    def search_channel(self, query: str) -> None:
         yt_request = self._yt_resource.search().list(
             part='snippet',
             type='channel',
@@ -43,9 +42,6 @@ class Youtube:
         print_heading('#   Channel (Subscribers)')
         for index, out in enumerate(channel_output):
             print(f'{out} ({self._subscribers[index]})')
-
-    def select_channel(self, channel_no: int):
-        return self._channel_store.list()[channel_no-1]
 
     def subscriber_count(self, channel_id):
         def shorten_M_K(subs: str):
@@ -111,10 +107,6 @@ class YTChannel:
         self._channel_id = channel_id
         self._playlist_store = DataStore()
 
-    @property
-    def total_playlists(self):
-        return len(self._playlist_store)
-
     def fetch_playlists(self):
         with alive_bar(manual=True, bar='smooth', spinner='dots_reverse') as bar:
 
@@ -143,18 +135,8 @@ class YTChannel:
                     break
         print()
 
-    # def print_playlists(self):
-    #     print('!!!!!!!!!!!       DEPRECATED        !!!!!!!!!!!!!')
-    #     print_heading('<< PLAYLISTS >>')
-    #     self._playlist_store.print()
-
     def playlists(self) -> DataStore:
         return self._playlist_store
-
-    # # To be removed
-    # def select_playlist(self, playlist_no):
-    #     print('!!!!!!!!!!!       DEPRECATED        !!!!!!!!!!!!!')
-    #     return self._playlist_store.list()[playlist_no-1]
 
 
 class YTPlaylist:
@@ -193,11 +175,6 @@ class YTPlaylist:
                 if not nextPageToken:
                     break
         print()
-
-    # def print_videos(self):
-    #     print('!!!!!!!!!!!       DEPRECATED        !!!!!!!!!!!!!')
-    #     print_heading('<< VIDEOS IN THE PLAYLIST >>')
-    #     self._videos_store.print()
 
     def videos(self) -> DataStore:
         return self._videos_store

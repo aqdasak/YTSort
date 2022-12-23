@@ -33,39 +33,48 @@ def get_playlist_id_from_cache(cache: CacheManager):
     return playlist_cache_unit['id']
 
 
-def print_and_select_playlist(playlists: DataStore, user_input: str) -> dict[str, str]:
+def print_and_select_playlist(playlists: DataStore, warning: str = '') -> dict[str, str]:
     """
     Print the given playlists and take user input to select from the available playlists.
-    If user input a number the playlist corresponding to that serial number will be selected.
-    If user input a string, it will select only those playlists which contains the input as the substring of the playlist. The function will be run recursively with those playlists and the user input.
+    If user inputs a number the playlist corresponding to that serial number will be selected.
+    If user inputs a string, it will select only those playlists which contains the input as the substring of the playlist. The function will be run recursively with only those playlists.
 
     :param DataStore playlists:
-    :param str user_input:
+    :param str warning: Give warning if previous input was wrong. `warning` contains the warning message
     :return: Dictionary of type {'title':title,'id':id}
     :rtype: dict[str,str]
     """
 
-    user_input = user_input.lower()
+    if warning:
+        print_warning(warning)
+    else:
+        playlists.print()
 
-    temp_playlist = DataStore()
-    for playlist in playlists:
-        title = playlist['title']
-        if user_input in title.lower():
-            temp_playlist.update(title, playlist['id'])
-
-    try:
-        temp_playlist.print()
-    except Exception as e:
-        print(e, '\nWrong input, try again')
-        return print_and_select_playlist(playlists, user_input)
-
-    user_input = non_empty_input('Select playlist by number or name: ')
+    user_input = non_empty_input('Select playlist by number or name: ').lower()
     print()
 
     if user_input.isdigit():
-        return temp_playlist.list()[int(user_input)-1]
+        if 1 <= int(user_input) <= len(playlists):
+            # Select and return the playlist if user_input is in correct range
+            return playlists[int(user_input)-1]
+
+        # Display warning if user_input is out of range and pass the playlists unchanged
+        return print_and_select_playlist(playlists, warning=f'Warning: Input range is [1,{len(playlists)+1})')
+
     else:
-        return print_and_select_playlist(temp_playlist, user_input)
+        # Select playlists containing user_input as their title's substring
+        temp_playlist = DataStore()
+        for playlist in playlists:
+            title = playlist['title']
+            if user_input in title.lower():
+                temp_playlist.update(title, playlist['id'])
+
+        # Rerun the function to take input on matched playlists
+        if len(temp_playlist) > 0:
+            return print_and_select_playlist(temp_playlist)
+
+    # Display warning if no playlist is matched (and all other cases, if happen) and pass the playlists unchanged
+    return print_and_select_playlist(playlists, warning="Didn't match, try again")
 
 
 def get_playlist_id_from_youtube(cache: CacheManager, yt_resource: Resource):
@@ -74,18 +83,7 @@ def get_playlist_id_from_youtube(cache: CacheManager, yt_resource: Resource):
     channel.fetch_playlists()
 
     print_heading('<< PLAYLISTS >>')
-    channel.playlists().print()
-    # channel.print_playlists()
-
-    user_input = non_empty_input('Select playlist by number or name: ')
-    print()
-
-    if user_input.isdigit():
-        playlist_cache_unit = channel.playlists()[int(user_input)-1]
-
-    else:
-        playlist_cache_unit = print_and_select_playlist(
-            channel.playlists(), user_input)
+    playlist_cache_unit = print_and_select_playlist(channel.playlists())
 
     cache.update_playlist_cache(playlist_cache_unit)
     return playlist_cache_unit['id']
@@ -96,12 +94,14 @@ def get_channel_id(cache: CacheManager, yt_resource: Resource):
         youtube = Youtube(yt_resource)
         while True:
             youtube.search_channel(user_input)
-            if youtube.total_channels > 0:
+            if len(youtube.channels()) > 0:
                 break
             else:
                 user_input = non_empty_input('Not found search again: ')
         youtube.print_channels()
-        return youtube.select_channel(int(input_in_range('Select channel: ', 1, youtube.total_channels+1)))
+        user_input = int(input_in_range(
+            'Select channel: ', 1, len(youtube.channels())+1))
+        return youtube.channels()[user_input-1]
 
     if cache.is_local_channel_cache_available():
         channel_cache_unit = cache.local_channel_cache.list()[0]
@@ -174,7 +174,6 @@ def main():
 
     print_heading('<< VIDEOS IN THE PLAYLIST >>')
     playlist.videos().print()
-    # playlist.print_videos()
     remote_serial_dict = playlist.get_videos_serial()
 
     print()
