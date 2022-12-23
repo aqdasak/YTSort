@@ -10,5 +10,5 @@ config = {
     'shared_cache': os.path.join(os.path.dirname(__file__), '.ytsort_cache/'),
     'cache_indent': 4,
     'character_after_serial': ')',
-    'padded_zero': True,
+    'padded_zero': False,
 }

@@ -59,13 +59,13 @@ class RenamingHelper:
 
         for local_file in self.local_files:
             if local_file not in self.exceptions and not os.path.isdir(local_file):
-                least_length_diff = 1000
+                least_length_diff = 999999
                 temp_remote = None
                 for remote_file in self.serial_dict:
                     if self._remove_chars(remote_file) in self._remove_chars(local_file):
 
                         length_diff = len(local_file) - len(remote_file)
-                        if (length_diff) < least_length_diff:
+                        if length_diff < least_length_diff:
                             least_length_diff = length_diff
                             temp_remote = remote_file
 

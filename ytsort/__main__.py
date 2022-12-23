@@ -3,7 +3,8 @@ import os
 from googleapiclient.discovery import build, Resource
 
 from ytsort.config import config
-from ytsort.my_io import input_in_range, non_empty_getpass, print_info, non_empty_input, print_warning, take_input
+from ytsort.data_store import DataStore
+from ytsort.my_io import input_in_range, non_empty_getpass, print_heading, print_info, non_empty_input, print_warning, take_input
 from ytsort.renaming_helper import RenamingHelper
 from ytsort.cache_manager import CacheManager
 from ytsort.youtube import YTPlaylist, Youtube, YTChannel
@@ -32,13 +33,60 @@ def get_playlist_id_from_cache(cache: CacheManager):
     return playlist_cache_unit['id']
 
 
+def print_and_select_playlist(playlists: DataStore, user_input: str) -> dict[str, str]:
+    """
+    Print the given playlists and take user input to select from the available playlists.
+    If user input a number the playlist corresponding to that serial number will be selected.
+    If user input a string, it will select only those playlists which contains the input as the substring of the playlist. The function will be run recursively with those playlists and the user input.
+
+    :param DataStore playlists:
+    :param str user_input:
+    :return: Dictionary of type {'title':title,'id':id}
+    :rtype: dict[str,str]
+    """
+
+    user_input = user_input.lower()
+
+    temp_playlist = DataStore()
+    for playlist in playlists:
+        title = playlist['title']
+        if user_input in title.lower():
+            temp_playlist.update(title, playlist['id'])
+
+    try:
+        temp_playlist.print()
+    except Exception as e:
+        print(e, '\nWrong input, try again')
+        return print_and_select_playlist(playlists, user_input)
+
+    user_input = non_empty_input('Select playlist by number or name: ')
+    print()
+
+    if user_input.isdigit():
+        return temp_playlist.list()[int(user_input)-1]
+    else:
+        return print_and_select_playlist(temp_playlist, user_input)
+
+
 def get_playlist_id_from_youtube(cache: CacheManager, yt_resource: Resource):
     channel_id = get_channel_id(cache, yt_resource)
     channel = YTChannel(yt_resource, channel_id)
     channel.fetch_playlists()
-    channel.print_playlists()
-    playlist_cache_unit = channel.select_playlist(
-        int(input_in_range('Select playlist: ', 1, channel.total_playlists+1)))
+
+    print_heading('<< PLAYLISTS >>')
+    channel.playlists().print()
+    # channel.print_playlists()
+
+    user_input = non_empty_input('Select playlist by number or name: ')
+    print()
+
+    if user_input.isdigit():
+        playlist_cache_unit = channel.playlists()[int(user_input)-1]
+
+    else:
+        playlist_cache_unit = print_and_select_playlist(
+            channel.playlists(), user_input)
+
     cache.update_playlist_cache(playlist_cache_unit)
     return playlist_cache_unit['id']
 
@@ -48,7 +96,7 @@ def get_channel_id(cache: CacheManager, yt_resource: Resource):
         youtube = Youtube(yt_resource)
         while True:
             youtube.search_channel(user_input)
-            if youtube._channel_store.len > 0:
+            if youtube.total_channels > 0:
                 break
             else:
                 user_input = non_empty_input('Not found search again: ')
@@ -90,8 +138,8 @@ def rename(renaming_helper: RenamingHelper, cache: CacheManager):
     if renaming_helper.is_rename_dict_formed():
         cache.save()
         renaming_helper.dry_run()
+        print_info('\nFiles may have been skipped if not present in YouTube playlist or already have serial number prefixed to it or the owner may have renamed the video on YouTube.\n')
 
-        print('\n')
         confirm = non_empty_input(
             "This can't be undone. Are you sure to rename?(y if yes): ").lower()
         print()
@@ -106,7 +154,7 @@ def rename(renaming_helper: RenamingHelper, cache: CacheManager):
             'Check if you have selected correct playlist.')
 
 
-def main2():
+def main():
     yt_resource = build('youtube', 'v3', developerKey=config['api_key'])
     print_info(f"If you want to ignore some files, add name of those files in {config['exceptions_file']}"
                f" in the same folder in which files to be renamed are present.")
@@ -123,7 +171,10 @@ def main2():
 
     playlist = YTPlaylist(yt_resource, playlist_id)
     playlist.fetch_videos()
-    playlist.print_videos()
+
+    print_heading('<< VIDEOS IN THE PLAYLIST >>')
+    playlist.videos().print()
+    # playlist.print_videos()
     remote_serial_dict = playlist.get_videos_serial()
 
     print()
@@ -137,7 +188,7 @@ def main2():
 @click.option('-c', '--character', help='Character after serial.')
 @click.option('-p', '--padded-zero', is_flag=True, help='Padded zero.')
 @click.option('-np', '--no-padded-zero', is_flag=True, help='No padded zero.')
-def main(character, padded_zero, no_padded_zero):
+def cli(character, padded_zero, no_padded_zero):
     if character is not None:
         config['character_after_serial'] = character
 
@@ -152,7 +203,7 @@ def main(character, padded_zero, no_padded_zero):
         print('You can set your api key to the environment variable YOUTUBE_DATA_API_KEY')
 
     try:
-        main2()
+        main()
     except KeyboardInterrupt:
         print('\nAborted!')
     except Exception:
@@ -161,4 +212,4 @@ def main(character, padded_zero, no_padded_zero):
 
 
 if __name__ == '__main__':
-    main()
+    cli()

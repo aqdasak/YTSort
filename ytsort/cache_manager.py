@@ -86,13 +86,13 @@ class CacheManager:
             os.mkdir(folder)
 
     def is_local_playlist_cache_available(self):
-        return True if self._local_playlist_cache.len > 0 else False
+        return True if len(self._local_playlist_cache) > 0 else False
 
     def is_local_channel_cache_available(self):
-        return True if self._local_channel_cache.len > 0 else False
+        return True if len(self._local_channel_cache) > 0 else False
 
     def is_shared_channel_cache_available(self):
-        return True if self._shared_channel_cache.len > 0 else False
+        return True if len(self._shared_channel_cache) > 0 else False
 
     def _dump(self, path, cache_list: list):
         with open(path, 'w') as f:
