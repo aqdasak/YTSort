@@ -75,6 +75,10 @@ class RenamingHelper:
                     self._update_rename_dict(
                         local_file, self.serial_dict[temp_remote])
 
+        # Sorting in arranging order according to the new name i.e. value of the dictionary
+        self.rename_dict = dict(
+            sorted(self.rename_dict.items(), key=lambda item: item[1]))
+
     def is_rename_dict_formed(self) -> bool:
         return False if len(self.rename_dict) == 0 else True
 

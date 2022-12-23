@@ -58,7 +58,7 @@ def get_channel_id(cache: CacheManager, yt_resource: Resource):
     if cache.is_local_channel_cache_available():
         channel_cache_unit = cache.local_channel_cache.list()[0]
         print_info(
-            f"Channel {channel_cache_unit['title']} found in {os.path.join(os.path.basename(config['local_cache']),'channel.json')}.")
+            f"Channel: \"{channel_cache_unit['title']}\" found in cache.")
         inp = take_input('Is the channel correct?(n if no): ').lower()
         if inp in ('n', 'no'):
             cache.delete_local_channel_cache()

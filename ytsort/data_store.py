@@ -26,8 +26,8 @@ class DataStore:
 
     def print(self):
         if self.len > 0:
-            for i, item in enumerate(self.list()):
-                print(i + 1, '-', item['title'])
+            for i, item in enumerate(self.list(), start=1):
+                print(i, '-', item['title'])
         else:
             raise Exception('Datastore is empty')
 
