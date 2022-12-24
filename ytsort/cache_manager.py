@@ -5,7 +5,22 @@ from ytsort.data_store import DataStore
 
 
 class CacheManager:
-    def __init__(self, config) -> None:
+    """
+    Provide functions to easily manage cache.
+    Use json to dump data stored in DataStore object as list.
+    """
+
+    def __init__(self, config: dict) -> None:
+        """
+        Parameters
+        ----------
+        config: dict
+            Configurations to change the behaviour of program
+
+        Required keys in config:
+        1. 'local_cache'
+        2. 'shared_cache'
+        """
         self.__local_playlist_cache_path = os.path.join(
             config['local_cache'], 'playlist.json')
         self.__local_channel_cache_path = os.path.join(
@@ -26,14 +41,17 @@ class CacheManager:
 
     @property
     def local_playlist_cache(self):
+        """Playlist cache stored in renaming folder"""
         return self._local_playlist_cache
 
     @property
     def local_channel_cache(self):
+        """Channel cache stored in renaming folder"""
         return self._local_channel_cache
 
     @property
     def shared_channel_cache(self):
+        """Channel cache stored in shared cache folder"""
         return self._shared_channel_cache
 
     @staticmethod
@@ -68,17 +86,17 @@ class CacheManager:
     def load_local_playlist_cache(self):
         r = DataStore.retrieve_from_file(self.__local_playlist_cache_path)
         if r:
-            self._local_playlist_cache.load(r)
+            self._local_playlist_cache.append(r)
 
     def load_local_channel_cache(self):
         r = DataStore.retrieve_from_file(self.__local_channel_cache_path)
         if r:
-            self._local_channel_cache.load(r)
+            self._local_channel_cache.append(r)
 
     def load_shared_channel_cache(self):
         r = DataStore.retrieve_from_file(self.__shared_channel_cache_path)
         if r:
-            self._shared_channel_cache.load(r)
+            self._shared_channel_cache.append(r)
 
     @staticmethod
     def create_folder(folder):

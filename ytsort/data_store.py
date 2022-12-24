@@ -56,9 +56,9 @@ class DataStore:
         data_store._value = new_data_units
         return data_store
 
-    def load(self, data_store) -> None:
+    def append(self, data_store) -> None:
         """
-        Load another DataStore into this DataStore.
+        Append another DataStore into this DataStore.
         Use with caution, value added by load() can cause duplication.
         """
         if type(data_store) != DataStore:

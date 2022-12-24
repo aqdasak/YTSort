@@ -9,9 +9,16 @@ from ytsort.data_store import DataStore
 
 
 class Youtube:
+    """
+    Access YouTube level data, i.e. search channels and subscribers.
+    """
+
     def __init__(self, yt_resource: Resource) -> None:
         """
-        :param yt_resource: googleapiclient.discovery.build object
+        Parameters
+        ----------
+        yt_resource:
+            googleapiclient.discovery.build object
         """
         self._yt_resource = yt_resource
         self._channel_store = DataStore()
@@ -98,10 +105,19 @@ class Youtube:
 
 
 class YTChannel:
+    """
+    Single YouTube channel.
+    Contains channel's ID and all the playlists available in the channel.
+    """
+
     def __init__(self, yt_resource: Resource, channel_id) -> None:
         """
-        :param yt_resource: googleapiclient.discovery.Resource object
-        :param channel_id: youtube channel ID
+        Parameters
+        ----------
+        yt_resource:
+            googleapiclient.discovery.Resource object
+        channel_id:
+            youtube channel ID
         """
         self._yt_resource = yt_resource
         self._channel_id = channel_id
@@ -140,10 +156,19 @@ class YTChannel:
 
 
 class YTPlaylist:
+    """
+    YouTube channel's single playlist.
+    Contains playlist's ID and all the videos available in the playlist.
+    """
+
     def __init__(self, yt_resource: Resource, playlist_id) -> None:
         """
-        :param yt_resource: googleapiclient.discovery.Resource object
-        :param playlist_id: youtube playlist ID
+        Parameters
+        ----------
+        yt_resource:
+            googleapiclient.discovery.Resource object
+        playlist_id:
+            youtube playlist ID
         """
         self._yt_resource = yt_resource
         self._playlist_id = playlist_id
@@ -179,11 +204,9 @@ class YTPlaylist:
     def videos(self) -> DataStore:
         return self._videos_store
 
-    def get_videos_serial(self):
+    def get_videos_serial(self) -> dict[str, int]:
         # {Title: serial_number}
-        video_serial = {}
-        i = 1
-        for cache_unit in self._videos_store.list():
+        video_serial: dict[str, int] = {}
+        for i, cache_unit in enumerate(self._videos_store.list(), start=1):
             video_serial.update({cache_unit['title']: i})
-            i += 1
         return video_serial

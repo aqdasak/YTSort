@@ -39,10 +39,17 @@ def print_and_select_playlist(playlists: DataStore, warning: str = '') -> dict[s
     If user inputs a number the playlist corresponding to that serial number will be selected.
     If user inputs a string, it will select only those playlists which contains the input as the substring of the playlist. The function will be run recursively with only those playlists.
 
-    :param DataStore playlists:
-    :param str warning: Give warning if previous input was wrong. `warning` contains the warning message
-    :return: Dictionary of type {'title':title,'id':id}
-    :rtype: dict[str,str]
+    Parameters
+    ----------
+    playlists: DataStore
+
+    warning: str
+        Give warning if previous input was wrong. `warning` contains the warning message
+
+    Return
+    ------
+    : dict[str,str]
+        Dictionary of type {'title':title,'id':id}
     """
 
     if warning:

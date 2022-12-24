@@ -1,11 +1,13 @@
 import contextlib
 import io
 from getpass import getpass
+from typing import Callable
 from colorama import Fore as c, Style
 
 
-def arg_parse(*args):
-    return ' '.join(tuple(map(lambda x: str(x), args)))
+def arg_parse(*args) -> str:
+    """Take arguments and return after joining them by a space."""
+    return ' '.join([str(x) for x in args])
 
 
 def take_input(arg):
@@ -14,6 +16,7 @@ def take_input(arg):
 
 
 def non_empty_input(arg):
+    """Takes input until the input is not empty."""
     arg = c.LIGHTGREEN_EX + arg + c.RESET
     while True:
         inp = input(arg)
@@ -22,6 +25,7 @@ def non_empty_input(arg):
 
 
 def non_empty_getpass(arg):
+    """Takes hidden input until the input is not empty."""
     arg = c.LIGHTGREEN_EX + arg + c.RESET
     while True:
         inp = getpass(arg)
@@ -30,6 +34,19 @@ def non_empty_getpass(arg):
 
 
 def input_in_range(msg, a, b=None) -> float:
+    """
+    Takes input until the input is not in range.
+
+    Parameters
+    ----------
+    a: int
+        Upper bound if `b` is not supplied, else lower bound
+    b: int
+        Upper bound if supplied
+
+    If only `a` is supplied, 0 is lower bound and `a` is upper bound.
+    If both `a` and `b` are supplied, `a` is lower bound and `b` is upper bound.
+    """
     if b is not None:
         if b <= a:
             raise ValueError('Upper bound should be greater than lower bound')
@@ -69,7 +86,10 @@ def print_heading(*args):
     print(c.RESET + Style.NORMAL)
 
 
-def capture_stdout(func) -> list:
+def capture_stdout(func: Callable) -> list:
+    """
+    Captures the standard output on running `func()` and returns it in a list with each line as its item.
+    """
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
         func()
