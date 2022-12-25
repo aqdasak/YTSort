@@ -5,6 +5,15 @@ from typing import Callable
 from colorama import Fore as c, Style
 
 
+def is_int(num: str) -> bool:
+    """Check if given string is integer or not"""
+    try:
+        int(num)
+    except ValueError:
+        return False
+    return True
+
+
 def arg_parse(*args) -> str:
     """Take arguments and return after joining them by a space."""
     return ' '.join([str(x) for x in args])
@@ -24,7 +33,7 @@ def non_empty_input(arg):
             return inp
 
 
-def non_empty_getpass(arg):
+def non_empty_getpass(arg) -> str:
     """Takes hidden input until the input is not empty."""
     arg = c.LIGHTGREEN_EX + arg + c.RESET
     while True:
@@ -33,9 +42,9 @@ def non_empty_getpass(arg):
             return inp
 
 
-def input_in_range(msg, a, b=None) -> float:
+def input_in_range(msg, a, b=None) -> int:
     """
-    Takes input until the input is not in range.
+    Takes input until the input is not in range. Both `a` and `b` inclusive.
 
     Parameters
     ----------
@@ -61,11 +70,11 @@ def input_in_range(msg, a, b=None) -> float:
     while True:
         inp = non_empty_input(msg)
         try:
-            inp = float(inp)
-            if lb <= inp < ub:
+            inp = int(inp)
+            if lb <= inp <= ub:
                 return inp
-            print_warning(f'Warning: Input range is [{lb},{ub})')
-        except Exception:
+            print_warning(f'Warning: Input range is [{lb},{ub}]')
+        except ValueError:
             print_warning(f'Warning: Please input a number')
 
 

@@ -3,7 +3,7 @@ import os
 from ytsort.my_io import print_heading, print_warning
 
 
-class RenamingHelper:
+class Renamer:
     """
     Helps in renaming the files. This class contains the logic to rename the files according to the YouTube playlist.
 
