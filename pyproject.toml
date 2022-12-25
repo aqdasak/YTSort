@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "ytsort"
-version = "1.2.0"
+version = "1.2.1"
 description = "Arrange downloaded youtube videos"
 authors = ["Aqdas Ahmad Khan <aqdasak@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.scripts]
-ytsort = "ytsort.__main__:main"
+ytsort = "ytsort.__main__:cli"
 
 [tool.poetry.dependencies]
 python = "^3.10"

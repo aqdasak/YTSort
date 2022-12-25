@@ -313,8 +313,8 @@ def main():
 
 @click.command()
 @click.option('-c', '--character', help='Character after serial.')
-@click.option('-p', '--padded-zero', is_flag=True, help='Padded zero.')
-@click.option('-np', '--no-padded-zero', is_flag=True, help='No padded zero.')
+@click.option('-z', '--zero', is_flag=True, help='Add zero before serial numbers to make them all of equal length.')
+@click.option('-x', '--nozero', is_flag=True, help="Don't add zero before serial numbers.")
 def cli(character, padded_zero, no_padded_zero):
     if character is not None:
         config['character_after_serial'] = character
@@ -339,4 +339,7 @@ def cli(character, padded_zero, no_padded_zero):
 
 
 if __name__ == '__main__':
+    # Also set this in pyproject.toml
+    # [tool.poetry.scripts]
+    # ytsort = "ytsort.__main__:cli"
     cli()

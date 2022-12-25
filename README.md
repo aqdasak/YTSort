@@ -6,12 +6,25 @@ This program sorts the already downloaded youtube videos present in a folder by 
 
 Youtube Data API v3 is required. Get it from [here](https://console.cloud.google.com/apis/library/youtube.googleapis.com?supportedpurview=project)
 
-# Install 
+# Install
+###### Recommended (To install pipx click [here](https://github.com/pypa/pipx#install-pipx))
+```
+pipx install ytsort
+```
 
+###### or
 ```
 pip install ytsort
 ```
 
+#### Or upgrade by:
+```
+pipx upgrade ytsort
+```
+###### or
+```
+pip install --upgrade ytsort
+```
 # Usage
 
 Set Youtube API Key to the environment variable 'YOUTUBE_DATA_API_KEY' (for ease of use, but not required).
@@ -20,27 +33,31 @@ Set Youtube API Key to the environment variable 'YOUTUBE_DATA_API_KEY' (for ease
 ```
 ytsort
 ```
-ytsort [Options]
+
+```
+Usage: ytsort [OPTIONS]
 
 Options:
 
-    -c, --character TEXT   Character after serial.
+  -c, --character TEXT    Character after serial.
+  -z, --zero              Add zero before serial numbers to make them all of
+                          equal length.
+  -x, --nozero            Don't add zero before serial numbers.
+  --help                  Show this message and exit.
+```
 
-    -p, --padded-zero      Padded zero.
-
-    -np, --no-padded-zero  No padded zero.
-
-    --help                 Show help.
-
-If -p & -np both are passed simultaneously then default from config.py will be used.
+If -z & -x both are passed simultaneously then default from config.py will be used.
 
 
 # Install from source
+Poetry is required. For installation click [here](https://python-poetry.org/docs/#installation).
 
-1. Install the packages in requirements.txt by running:
-
-   ```
-   python -m pip install -r requirements.txt
+1. Download the source and install the dependencies by running:
+  
+   ``` 
+   git clone https://github.com/aqdasak/YTSort.git
+   cd YTSort
+   poetry install
    ```
 
 2. Not required but for ease of use
@@ -53,9 +70,13 @@ If -p & -np both are passed simultaneously then default from config.py will be u
 
       `'api_key': os.environ.get('YOUTUBE_DATA_API_KEY'),` to `'api_key': <Your Youtube API key>,`
 
-## Run
-
-cd into the folder containing youtube videos and execute:
+### Run
+In the source folder containing pyproject.toml
 ```
-python <path of YTSort folder>
+poetry shell
+```
+
+then cd into the folder containing youtube videos and execute:
+```
+ytsort
 ```
