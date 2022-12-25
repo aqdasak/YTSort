@@ -315,13 +315,13 @@ def main():
 @click.option('-c', '--character', help='Character after serial.')
 @click.option('-z', '--zero', is_flag=True, help='Add zero before serial numbers to make them all of equal length.')
 @click.option('-x', '--nozero', is_flag=True, help="Don't add zero before serial numbers.")
-def cli(character, padded_zero, no_padded_zero):
+def cli(character, zero, nozero):
     if character is not None:
         config['character_after_serial'] = character
 
-    if padded_zero and not no_padded_zero:
+    if zero and not nozero:
         config['padded_zero'] = True
-    elif not padded_zero and no_padded_zero:
+    elif not zero and nozero:
         config['padded_zero'] = False
     # else default in config is used
 

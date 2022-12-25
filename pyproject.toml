@@ -1,9 +1,20 @@
 [tool.poetry]
 name = "ytsort"
-version = "1.2.1"
+version = "1.2.2"
 description = "Arrange downloaded youtube videos"
 authors = ["Aqdas Ahmad Khan <aqdasak@gmail.com>"]
 readme = "README.md"
+homepage = "https://github.com/aqdasak/YTSort/"
+repository = "https://github.com/aqdasak/YTSort/"
+license = "MIT"
+keywords = [
+    'python',
+    'youtube',
+    'sort',
+    'youtube-playlist',
+    'youtube-data-api-v3',
+]
+
 
 [tool.poetry.scripts]
 ytsort = "ytsort.__main__:cli"
