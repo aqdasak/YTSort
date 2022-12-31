@@ -2,12 +2,15 @@ import click
 import os
 from googleapiclient.discovery import build, Resource
 
-from ytsort.config import config
+from ytsort.config import get_config, change_default_config
 from ytsort.data_store import DataStore
 from ytsort.my_io import input_in_range, is_int, non_empty_getpass, print_heading, print_info, non_empty_input, print_warning, take_input
 from ytsort.renamer import Renamer
 from ytsort.cache_manager import CacheManager
 from ytsort.youtube import YTPlaylist, Youtube, YTChannel
+
+
+config = get_config()
 
 
 def get_exceptions() -> list[str]:
@@ -315,7 +318,13 @@ def main():
 @click.option('-c', '--character', help='Character after serial.')
 @click.option('-z', '--zero', is_flag=True, help='Add zero before serial numbers to make them all of equal length.')
 @click.option('-x', '--nozero', is_flag=True, help="Don't add zero before serial numbers.")
-def cli(character, zero, nozero):
+@click.option('-d', '--defaults', is_flag=True, help="Change the default configurations and exit.")
+def cli(character, zero, nozero, defaults):
+    if defaults:
+        change_default_config()
+        print('\nDone')
+        exit()
+
     if character is not None:
         config['character_after_serial'] = character
 
@@ -327,7 +336,7 @@ def cli(character, zero, nozero):
 
     if config['api_key'] is None:
         config['api_key'] = non_empty_getpass('Please provide API key: ')
-        print('You can set your api key to the environment variable YOUTUBE_DATA_API_KEY, then you will not be required to input API key everytime')
+        print('You can set your API key to the environment variable YOUTUBE_DATA_API_KEY, then you will not be required to input API key everytime')
 
     try:
         main()

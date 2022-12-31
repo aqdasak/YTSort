@@ -43,6 +43,7 @@ Options:
   -z, --zero              Add zero before serial numbers to make them all of
                           equal length.
   -x, --nozero            Don't add zero before serial numbers.
+  -d, --defaults          Change the default configurations and exit.
   --help                  Show this message and exit.
 ```
 

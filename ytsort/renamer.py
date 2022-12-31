@@ -87,7 +87,7 @@ class Renamer:
 
     def __padded_zero_file_prefix(self, serial: int) -> str:
         """
-        Return serial numbers with zero prefixed to them to make them all of equal lenghts
+        Return serial numbers with zero prefixed to them to make them all of equal lengths
         """
 
         return f'{serial:0{self._len_digits}d}'
