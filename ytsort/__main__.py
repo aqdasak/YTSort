@@ -5,7 +5,7 @@ from googleapiclient.discovery import build, Resource
 from ytsort.config import get_config, change_default_config
 from ytsort.data_store import DataStore
 from ytsort.my_io import input_in_range, is_int, non_empty_getpass, print_heading, print_info, non_empty_input, print_warning, take_input
-from ytsort.renamer import Renamer
+from ytsort.renamer import Renamer, AddSerialNumberStrategy, RemoveSerialNumberStrategy
 from ytsort.cache_manager import CacheManager
 from ytsort.youtube import YTPlaylist, Youtube, YTChannel
 
@@ -15,6 +15,9 @@ config = get_config()
 
 def get_exceptions() -> list[str]:
     """List of files not to be renamed"""
+
+    print_info(f"\nIf you want to ignore some files, add name of those files in {config['exceptions_file']}"
+               f" in the same folder in which files to be renamed are present.")
 
     exceptions = []
     try:
@@ -251,24 +254,19 @@ def get_channel_id(cache: CacheManager, yt_resource: Resource) -> str:
     return channel_cache_unit['id']
 
 
-def rename(renamer: Renamer, cache: CacheManager):
-    """
-    Rename the files using `renamer`.
+def remove_serial_numbers():
+    files = os.listdir()
+    exceptions = get_exceptions()
 
-    Parameters
-    ----------
-    renamer: Renamer
-        Contains all the information and logic required to rename files.
-    cache: CacheManager
-        CacheManager object to manage cache
-    """
+    strategy = RemoveSerialNumberStrategy(
+        files, exceptions,
+        character_after_serial=config['character_after_serial']
+    )
 
-    renamer.generate_rename_dict()
+    renamer = Renamer(strategy)
 
     if renamer.is_rename_dict_formed():
-        cache.save()
         renamer.dry_run()
-        print_info('\nFiles may have been skipped if not present in YouTube playlist or already have serial number prefixed to it or the owner may have renamed the video on YouTube.\n')
 
         confirm = non_empty_input(
             "This can't be undone. Are you sure to rename?(y if yes): ").lower()
@@ -279,15 +277,11 @@ def rename(renamer: Renamer, cache: CacheManager):
             print("Nothing renamed")
     else:
         print_info(
-            '\nFiles already have serial number or match not found in local files and youtube videos.')
-        print_info(
-            'Check if you have selected correct playlist.')
+            f'\nNo file contains serial number in the beginning or "{config["character_after_serial"]}" is not present after the serial numbers.')
 
 
-def main():
+def add_serial_numbers():
     yt_resource = build('youtube', 'v3', developerKey=config['api_key'])
-    print_info(f"\nIf you want to ignore some files, add name of those files in {config['exceptions_file']}"
-               f" in the same folder in which files to be renamed are present.")
     files = os.listdir()
     exceptions = get_exceptions()
 
@@ -309,9 +303,33 @@ def main():
 
     print()
 
-    renamer = Renamer(
-        remote_serial_dict, files, exceptions, character_after_serial=config['character_after_serial'], padded_zero=config['padded_zero'])
-    rename(renamer, cache)
+    strategy = AddSerialNumberStrategy(
+        remote_serial_dict,
+        files,
+        exceptions,
+        config['character_after_serial'],
+        config['padded_zero']
+    )
+
+    renamer = Renamer(strategy)
+
+    if renamer.is_rename_dict_formed():
+        cache.save()
+        renamer.dry_run()
+        print_info('\nFiles may have been skipped if not present in YouTube playlist or already have serial number prefixed to it or the owner may have renamed the video on YouTube.\n')
+
+        confirm = non_empty_input(
+            "This can't be undone. Are you sure to rename?(y if yes): ").lower()
+        print()
+        if confirm in ('y', 'yes'):
+            renamer.start_batch_rename()
+        else:
+            print("Nothing renamed")
+    else:
+        print_info(
+            '\nFiles already have serial number or match not found in local files and youtube videos.')
+        print_info(
+            'Check if you have selected correct playlist.')
 
 
 @click.command()
@@ -319,19 +337,28 @@ def main():
 @click.option('-z', '--zero', is_flag=True, help='Add zero before serial numbers to make them all of equal length.')
 @click.option('-x', '--nozero', is_flag=True, help="Don't add zero before serial numbers.")
 @click.option('-d', '--defaults', is_flag=True, help="Change the default configurations and exit.")
-def cli(character, zero, nozero, defaults):
+@click.option('-r', '--remove-serial', is_flag=True, help='Remove the serial numbers from the local files upto the given character.')
+def cli(character, zero, nozero, defaults, remove_serial):
     if defaults:
         change_default_config()
         print('\nDone')
         exit()
 
     if character is not None:
-        config['character_after_serial'] = character
+        # If given more, only take first character of the string
+        config['character_after_serial'] = character[:1]
+
+    if remove_serial:
+        remove_serial_numbers()
+        exit()
 
     if zero and not nozero:
         config['padded_zero'] = True
     elif not zero and nozero:
         config['padded_zero'] = False
+    elif zero and nozero:
+        print_warning("--zero and --nozero can't be passed simultaneously")
+        exit(1)
     # else default in config is used
 
     if config['api_key'] is None:
@@ -339,7 +366,7 @@ def cli(character, zero, nozero, defaults):
         print('You can set your API key to the environment variable YOUTUBE_DATA_API_KEY, then you will not be required to input API key everytime')
 
     try:
-        main()
+        add_serial_numbers()
     except KeyboardInterrupt:
         print('\nAborted!')
     except Exception:

@@ -44,10 +44,11 @@ Options:
                           equal length.
   -x, --nozero            Don't add zero before serial numbers.
   -d, --defaults          Change the default configurations and exit.
+  -r, --remove-serial     Remove the serial numbers from the local files upto
+                          the given character
   --help                  Show this message and exit.
 ```
 
-If -z & -x both are passed simultaneously then default from config.py will be used.
 
 
 # Install from source

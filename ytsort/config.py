@@ -65,8 +65,10 @@ def change_default_config():
         print_info("Input '.' to skip or '/' to reset to factory default.")
         api_key = non_empty_input(
             'Input API key. Reset to use API key from environment: ').strip()
+
+        # If given more, only take first character of the string
         character_after_serial = non_empty_input(
-            "Input character to put after serial numbers or '*' to put no character: ").strip()
+            "Input character to put after serial numbers or '*' to put no character: ").strip()[:1]
         padded_zero = non_empty_input(
             'Input yes/y to add zero before serial numbers else no/n: ').strip()
 

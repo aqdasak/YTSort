@@ -1,23 +1,50 @@
+from abc import ABC, abstractmethod
 import os
 
 from ytsort.my_io import print_heading, print_warning
 
 
-class Renamer:
+class RenamingStrategy(ABC):
     """
-    Helps in renaming the files. This class contains the logic to rename the files according to the YouTube playlist.
+    Base class for different strategies for file renaming.
+    """
+
+    def __init__(self, local_files: list[str], exceptions: list[str], character_after_serial: str = ''):
+        """
+        Parameters
+        ----------
+        _local_files: list[str]
+            list containing files to be renamed
+
+        _exceptions: list[str]
+            list of files not to be renamed
+
+        _character_after_serial: str
+            character after serial number
+        """
+
+        self._character_after_serial = character_after_serial
+        self._local_files = local_files
+        self._exceptions = exceptions
+
+    @abstractmethod
+    def generate_rename_dict(self) -> dict[str, str]:
+        pass
+
+
+class AddSerialNumberStrategy(RenamingStrategy):
+    """
+    Renaming strategy, contains the logic to add serial numbers to the files.
 
     Attributes
     ----------
-    rename_dict : dict[str, str]
-        Dictionary as {<file's current name>: <file's new name>}
-    serial_dict : dict[str,int]
+    _serial_dict : dict[str,int]
         dictionary as {filename:serial}
-    local_files : list[str]
+    _local_files : list[str]
         list containing files to be renamed
-    exceptions : list[str]
+    _exceptions : list[str]
         list of files not to be renamed
-    __character_after_serial : str
+    _character_after_serial : str
         character to be put after serial number
     """
 
@@ -41,11 +68,7 @@ class Renamer:
             If zero be prefixed or not to the serial numbers to make them all of equal lenghts
         """
 
-        self.__character_after_serial = character_after_serial
-        self.serial_dict = serial_dict
-        self.local_files = local_files
-        self.exceptions = exceptions
-        self.rename_dict: dict[str, str] = {}
+        self._serial_dict = serial_dict
         if padded_zero:
             self._file_prefix = self.__padded_zero_file_prefix
             self._len_digits = len(str(len(serial_dict)))
@@ -53,8 +76,10 @@ class Renamer:
         else:
             self._file_prefix = self.__unpadded_zero_file_prefix
 
+        super().__init__(local_files, exceptions, character_after_serial)
+
     @staticmethod
-    def _remove_chars(st: str) -> str:
+    def _alphanum(st: str) -> str:
         """
         Remove the characters except alphanumerics.
 
@@ -99,42 +124,127 @@ class Renamer:
 
         return str(serial)
 
-    def _update_rename_dict(self, local_filename: str, index: int):
-        """Update the `rename_dict` by adding new key-value"""
-        index = self._file_prefix(index)
-
-        self.rename_dict.update(
-            {local_filename: f'{index}{self.__character_after_serial} {local_filename}'})
-
-    def generate_rename_dict(self):
+    def generate_rename_dict(self) -> dict[str, str]:
         """
         Generate dictionary to be used in `start_batch_rename()` function.
         """
+        rename_dict: dict[str, str] = {}
 
-        for local_file in self.local_files:
-            if local_file not in self.exceptions and not os.path.isdir(local_file):
-                least_length_diff = 999999
-                temp_remote = None
-                for remote_file in self.serial_dict:
-                    if self._remove_chars(remote_file) in self._remove_chars(local_file):
+        def update_rename_dict(local_filename: str, index: int):
+            """Update the `rename_dict` by adding new key-value"""
+            index = self._file_prefix(index)
 
-                        length_diff = len(local_file) - len(remote_file)
-                        if length_diff < least_length_diff:
-                            least_length_diff = length_diff
-                            temp_remote = remote_file
+            rename_dict.update(
+                {local_filename: f'{index}{self._character_after_serial} {local_filename}'})
 
-                if temp_remote is None:
-                    print_warning('SKIPPED:', local_file[:75]+'...')
-                elif not local_file.startswith(self._file_prefix(self.serial_dict[temp_remote])):
-                    self._update_rename_dict(
-                        local_file, self.serial_dict[temp_remote])
+        for local_file in self._local_files:
+            if local_file in self._exceptions or os.path.isdir(local_file):
+                continue
+
+            least_length_diff = float('inf')
+            temp_remote = None
+
+            for remote_file in self._serial_dict:
+                if self._alphanum(remote_file) not in self._alphanum(local_file):
+                    continue
+
+                length_diff = len(local_file) - len(remote_file)
+                if length_diff < least_length_diff:
+                    least_length_diff = length_diff
+                    temp_remote = remote_file
+
+            if temp_remote is None:
+                print_warning('SKIPPED:', local_file[:75]+'...')
+            elif not local_file.startswith(self._file_prefix(self._serial_dict[temp_remote])):
+                update_rename_dict(local_file, self._serial_dict[temp_remote])
 
         # Sorting in arranging order according to the new name i.e. value of the dictionary
-        self.rename_dict = dict(
-            sorted(self.rename_dict.items(), key=lambda item: item[1]))
+        rename_dict = dict(
+            sorted(rename_dict.items(), key=lambda item: item[1]))
+
+        return rename_dict
+
+
+class RemoveSerialNumberStrategy(RenamingStrategy):
+    """
+    Renaming strategy, contains the logic to remove the serial numbers from the files.
+
+    Attributes
+    ----------
+    _local_files : list[str]
+        list containing files to be renamed
+    _exceptions : list[str]
+        list of files not to be renamed
+    _character_after_serial : str
+        character to be put after serial number
+    """
+
+    def __init__(self, local_files: list[str], exceptions: list[str], character_after_serial: str = ' '):
+        """
+        Parameters
+        ----------
+        local_files: list[str]
+            list containing files to be renamed
+
+        exceptions: list[str]
+            list of files not to be renamed
+
+        character_after_serial: str
+            character to be put after serial number
+        """
+
+        super().__init__(local_files, exceptions, character_after_serial)
+
+    def generate_rename_dict(self) -> dict[str, str]:
+        """
+        Remove the serial number from the local files.
+        """
+
+        rename_dict: dict[str, str] = {}
+
+        for local_file in self._local_files:
+            local_file = local_file.strip()
+            idx = 0
+            ch_found = False
+            for ch in local_file:
+                if ch == self._character_after_serial:
+                    ch_found = True
+                    idx += 1
+                    break
+                elif not ch.isdecimal():
+                    break
+                idx += 1
+
+            if ch_found and 0 < idx < len(local_file):
+                rename_dict.update(
+                    {local_file: local_file[idx:].strip()}
+                )
+
+        return rename_dict
+
+
+class Renamer:
+    """
+    Helps in renaming the files according to the given strategy.
+
+    Attributes
+    ----------
+    _rename_dict : dict[str, str]
+        Dictionary as {<file's current name>: <file's new name>}
+    """
+
+    def __init__(self, renaming_strategy: RenamingStrategy) -> None:
+        """
+        Parameters
+        ----------
+        renaming_strategy : RenamingStrategy
+            Logic according to which files will be renamed
+        """
+
+        self._rename_dict = renaming_strategy.generate_rename_dict()
 
     def is_rename_dict_formed(self) -> bool:
-        return False if len(self.rename_dict) == 0 else True
+        return False if len(self._rename_dict) == 0 else True
 
     def dry_run(self):
         """Simulate the renaming process by printing the old name and new name side by side."""
@@ -142,7 +252,7 @@ class Renamer:
         print_heading('DRY RUN')
         u = '='*19
         print(u, 'OLD', u + '\t' + u, 'NEW', u)
-        for old, new in self.rename_dict.items():
+        for old, new in self._rename_dict.items():
             print(old[:40]+'...', end='\t')
             print(new[:40]+'...')
             print()
@@ -150,7 +260,7 @@ class Renamer:
     def start_batch_rename(self):
         """Rename the files according to the rename_dict"""
 
-        for old, new in self.rename_dict.items():
+        for old, new in self._rename_dict.items():
             try:
                 os.rename(old, new)
             except Exception as e:
